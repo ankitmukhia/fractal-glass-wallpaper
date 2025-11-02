@@ -61,8 +61,7 @@ export function drawWaveShape(
 	})
 
 	path.closePath();
-	ctx.globalCompositeOperation = "lighten";
-	ctx.filter = "blur(45px)";
+	ctx.filter = "blur(50px) brightness(105%) contrast(105%) saturate(110%)";
 	ctx.fillStyle = gradient;
 	ctx.fill(path);
 	ctx.restore();
