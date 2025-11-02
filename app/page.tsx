@@ -20,7 +20,6 @@ export default function Home() {
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
-
 		// third layer, pattern layer
 		const patternCanvas = document.createElement("canvas");
 		const patternCtx = patternCanvas.getContext("2d");
@@ -45,8 +44,9 @@ export default function Home() {
 		})
 
 		ctx.fillStyle = backgroundGradient;
-		ctx.globalCompositeOperation = "destination-atop";
+		ctx.filter = `blur(${200 / 4}px) brightness(100%) contrast(100%) saturate(100%)`;
 		ctx.fillRect(0, 0, resolution.width, resolution.height);
+		ctx.filter = "none none non none"
 
 		// Draw gradient shapes
 		gradientPalettes.forEach((palette) => {
