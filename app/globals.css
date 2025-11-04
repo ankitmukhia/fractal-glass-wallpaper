@@ -20,70 +20,66 @@
 } */
 
 body {
-	--step: 30px;
-	position: relative;
-	height: 100dvh;
-	width: 100dvw;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-/* 	background-color: #000113; */
+  --step: 30px;
+  position: relative;
+  height: 100dvh;
+  width: 100dvw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 	background-color: #000113; */
 }
 
 .background {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-	width: 1200px;
-	height: 800px;
-	border-radius: 16px;
-	mix-blend-mode: color-dodge;
-	background: repeating-linear-gradient(
-		90deg,
-/* 		rgba(255, 255, 255, 0.1), */
-		rgba(0, 0, 0, 0.1),
-		rgba(255, 255, 255, 0.20) var(--step)
-	);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 1200px;
+  height: 800px;
+  border-radius: 16px;
+  mix-blend-mode: color-dodge;
+  background: repeating-linear-gradient(
+    90deg,
+    /* 		rgba(255, 255, 255, 0.1), */ rgba(0, 0, 0, 0.1),
+    rgba(255, 255, 255, 0.2) var(--step)
+  );
 
-	backdrop-filter: blur(20px);
-	filter: blur(0.5px);
+  backdrop-filter: blur(20px);
+  filter: blur(0.5px);
 }
 
 .backdropShape {
-	position: absolute;
-	width: 1200px;
-	height: 800px;
-	border-radius: 16px;
+  position: absolute;
+  width: 1200px;
+  height: 800px;
+  border-radius: 16px;
 
-	filter: blur(5px);
-	mix-blend-mode: plus-lighter;
-	background: linear-gradient(
-		oklch(0.7647 0.1115 44.11) 0%,
+  filter: blur(5px);
+  mix-blend-mode: plus-lighter;
+  background: linear-gradient(
+    oklch(0.7647 0.1115 44.11) 0%,
 
-		oklch(0.6295 0.1141 220.69) 48%,
+    oklch(0.6295 0.1141 220.69) 48%,
 
-		oklch(0.2775 0.1264 322.78) 68%,
+    oklch(0.2775 0.1264 322.78) 68%,
 
-		oklch(0.2813 0.0688 247.53) 100%
-	);
-	z-index: -1;
-/* 	box-shadow: 0px 0px 120px -10px oklch(44% 57% 285deg); */
+    oklch(0.2813 0.0688 247.53) 100%
+  );
+  z-index: -1;
+  /* 	box-shadow: 0px 0px 120px -10px oklch(44% 57% 285deg); */
 }
 
 /* animation: 3s up-n-down infinite; */
 
 @keyframes up-n-down {
-	0 {
-		translate: -20% 20%;
-	}
-	50% {
-		translate: 20% -20%;
-
-	}
-	100% {
-		translate: -20% 20%;
-	}
+  0 {
+    translate: -20% 20%;
+  }
+  50% {
+    translate: 20% -20%;
+  }
+  100% {
+    translate: -20% 20%;
+  }
 }
-
-

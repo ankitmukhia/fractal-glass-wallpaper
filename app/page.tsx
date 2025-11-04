@@ -3,9 +3,10 @@
 import { useRef, useEffect } from "react";
 import { backgroundGradientPalettes, gradientPalettes } from "@/lib/constants";
 import { drawWaveShape } from "@/lib/utils/shape";
+import { FluttedGlass } from "@/components/flutted-glass";
 
 export default function Home() {
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  /* const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const resolution = { width: 900, height: 600 }
 
 	useEffect(() => {
@@ -28,9 +29,6 @@ export default function Home() {
 		// Set canvas dimensions
 		canvas.width = resolution.width
 		canvas.height = resolution.height
-
-		/* canvas.width = window.innerWidth
-		canvas.height = window.innerHeight */
 
 		const backgroundGradient = ctx.createLinearGradient(0, 0, resolution.width, resolution.height);
 
@@ -63,7 +61,7 @@ export default function Home() {
 		ctx.filter = "none";
 		ctx.globalCompositeOperation = "darken";
 
-		const step = 35; // CSS variable --step value
+		const step = 23; // CSS variable --step value
 		// Set pattern canvas to one repeat cycle
 		patternCanvas.width = step;
 		patternCanvas.height = step * 2;
@@ -85,11 +83,11 @@ export default function Home() {
 		// Fill main canvas with the repeating pattern
 		layer2ctx.fillStyle = pattern;
 		layer2ctx.fillRect(0, 0, 1920, 1080);
-	}, [])
+	}, []) */
 
-	return (
-		<div className="flex items-center justify-center h-dvh">
-			<div
+  return (
+    <div className="flex items-center justify-center h-dvh">
+      {/* <div
 				style={{
 					width: `${resolution.width}px`,
 					height: `${resolution.height}px`
@@ -107,9 +105,10 @@ export default function Home() {
 						borderRadius: "16px"
 					}}
 				/>
-			</div>
-		</div>
-	);
+			</div> */}
+      <FluttedGlass />
+    </div>
+  );
 }
 
 /* <div className="background" />
