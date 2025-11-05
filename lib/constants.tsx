@@ -22,12 +22,12 @@ export const gradientPalettes = [
     colors: [
       { r: 0, g: 18, b: 32 }, // Dark Blue
       { r: 255, g: 102, b: 0 }, // Dark Orange
-      /* { r: 255, g: 179, b: 102 }, // Light Orange
+      { r: 255, g: 179, b: 102 }, // Light Orange
 			{ r: 0, g: 64, b: 128 },  // Medium Blue
 			{ r: 255, g: 128, b: 0 }, // Orange
 			{ r: 0, g: 102, b: 204 }, // Bright Blue
 			{ r: 0, g: 0, b: 0 },     // Black
-			{ r: 102, g: 163, b: 255 } // Light Blue */
+			{ r: 102, g: 163, b: 255 } // Light Blue
     ],
   },
   /* {
