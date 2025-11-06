@@ -1,14 +1,14 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { drawWaveShape } from "@/lib/utils/shape";
 import { gradientPalettes, backgroundGradientPalettes } from "@/lib/constants";
-import { clsx as cn } from "clsx";
 
 const imageUrl =
 	"https://images.unsplash.com/photo-1750593693963-94991e151e77?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170";
 
-export const FluttedGlass = () => {
+export const FluttedGlass = ({ size, sizeRef }: {
+	size: number,
+	sizeRef: any
+}) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const programRef = useRef<WebGLProgram | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
@@ -19,16 +19,12 @@ export const FluttedGlass = () => {
 	// Toggle between image and solid color
 	const withImage = false;
 
-	const CSS_WIDTH = 1200;
-	const CSS_HEIGHT = 800;
+	const CSS_WIDTH = 900;
+	const CSS_HEIGHT = 600;
 
 	const distortion = 1.0;
 	const shift = 0.0;
 	const margin = 0.0;
-
-	const [size, setSize] = useState<number>(0.23);
-	const sizeRef = useRef<number>(size);
-	sizeRef.current = size;
 
 	useEffect(() => {
 		const canvas = canvasRef.current!;
@@ -141,7 +137,6 @@ export const FluttedGlass = () => {
 			return p;
 		}
 
-
 		const program = createProgram(vertexSource, fragmentSource);
 		if (!program) {
 			console.error("Failed to create program");
@@ -190,9 +185,8 @@ export const FluttedGlass = () => {
 			// gradient texture
 			const gradCanvas = document.createElement("canvas");
 			const ctx = gradCanvas.getContext("2d")!;
-			const resolution = { width: 900, height: 600 }
 
-			const backgroundGradient = ctx.createLinearGradient(0, 0, resolution.width, resolution.height);
+			const backgroundGradient = ctx.createLinearGradient(0, 0, CSS_WIDTH, CSS_HEIGHT);
 
 			backgroundGradientPalettes.forEach((palette) => {
 				palette.colors.forEach((color, index) => {
@@ -205,7 +199,7 @@ export const FluttedGlass = () => {
 
 			ctx.fillStyle = backgroundGradient;
 			ctx.filter = `blur(50px) brightness(100%) contrast(100%) saturate(100%)`;
-			ctx.fillRect(0, 0, resolution.width, resolution.height);
+			ctx.fillRect(0, 0, CSS_WIDTH, CSS_HEIGHT);
 			ctx.filter = "none"
 
 			// random wave shape on gradCanvas 
@@ -240,7 +234,6 @@ export const FluttedGlass = () => {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
-
 		const uniforms = {
 			u_image: gl.getUniformLocation(program, "u_image"),
 			u_imageAspect: gl.getUniformLocation(program, "u_imageAspect"),
@@ -252,7 +245,6 @@ export const FluttedGlass = () => {
 			u_margin: gl.getUniformLocation(program, "u_margin"),
 		};
 		uniformsRef.current = uniforms;
-
 
 		function resizeCanvasToDisplaySize() {
 			const width = CSS_WIDTH;
@@ -280,13 +272,11 @@ export const FluttedGlass = () => {
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.uniform1i(uniforms.u_image, 0);
 
-
 			gl.uniform2f(uniforms.u_resolution, CSS_WIDTH, CSS_HEIGHT);
 			gl.uniform1f(uniforms.u_size, sizeRef.current);
 			gl.uniform1f(uniforms.u_distortion, distortion);
 			gl.uniform1f(uniforms.u_shift, shift);
 			gl.uniform1f(uniforms.u_margin, margin);
-
 
 			if (withImage) {
 
@@ -294,7 +284,6 @@ export const FluttedGlass = () => {
 			} else {
 				gl.uniform1f(uniforms.u_imageAspect, 1.0);
 			}
-
 
 			gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -332,7 +321,6 @@ export const FluttedGlass = () => {
 		};
 		window.addEventListener("resize", handleResize);
 
-
 		return () => {
 			window.removeEventListener("resize", handleResize);
 			if (glRef.current) {
@@ -344,32 +332,19 @@ export const FluttedGlass = () => {
 		};
 	}, []);
 
-	function handleSizeChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const v = parseFloat(e.target.value);
-		setSize(v);
-		sizeRef.current = v;
-
+	// re-render shader when size change
+	useEffect(() => {
 		const gl = glRef.current;
 		const program = programRef.current;
 		const uniforms = uniformsRef.current;
 		const render = renderRef.current;
 
-
 		if (gl && program && uniforms) {
 			gl.useProgram(program);
-			gl.uniform1f(uniforms.u_size, v);
+			gl.uniform1f(uniforms.u_size, size);
 			render();
 		}
-	}
-
-	const min = 0.0;
-	const max = 1.0;
-	const step = 0.01;
-
-	const totalStops = Math.round((max - min) / step);
-	const dots = Array.from({ length: totalStops + 1 }, (_, i) => min + i * step);
-
-	const percentage = (size / max) * 100;
+	})
 
 	return (
 		<div className="flex flex-col items-center justify-center gap-2">
@@ -379,47 +354,12 @@ export const FluttedGlass = () => {
 				height={CSS_HEIGHT}
 				style={{
 					display: "block",
-					width: `${CSS_WIDTH}px`,
-					height: `${CSS_HEIGHT}px`,
+					width: "100%",
+					height: "100%",
 					boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-					borderRadius: 20,
+					borderRadius: 25,
 				}}
 			/>
-			<div className="flex flex-col gap-2 text-white">
-				<div className="group relative h-11 border border-neutral-200 rounded-2xl overflow-hidden">
-					<div className="flex items-center h-full rounded-2xl px-2">
-						<input
-							aria-label="Fluted glass size"
-							className={`slider appearance-none h-full bg-transparent group-hover:cursor-grab active:cursor-grabbing focus:outline-none z-10
-							`}
-							type="range"
-							min={min}
-							max={max}
-							step={step}
-							value={size}
-							onChange={handleSizeChange}
-							style={{
-								width: 300,
-							}}
-						/>
-						<div
-							className="absolute inset-0 flex bg-neutral-200 rounded-2xl pointer-events-none"
-							style={{ width: `${percentage}%` }}
-						/> 
-
-						<div className="absolute inset-0 flex items-center font-semibold text-neutral-400 justify-between pointer-events-none px-4">
-							<div>Distortion</div>
-							<div>{Number(size).toFixed(2)}</div>
-						</div>
-
-						{/* <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-							{dots.map((_, index) => (
-								![0,1,2].includes(index) && index !== dots.length - 1 ? <div key={index} className="h-[4px] w-[4px] bg-neutral-200 rounded-full" /> : <div key={index} className="h-[2px] w-[4px] rounded-full" />
-							))}
-						</div> */}
-					</div>
-				</div>
-			</div>
 		</div>
 	);
 };

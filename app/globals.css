@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f8f7f7;
   --foreground: #171717;
 }
 
@@ -12,14 +12,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #ffffff;
     --foreground: #ededed;
   }
-}
+} */
 
-body {}
+body {
+	background: var(--background)
+}
 
  .slider::-webkit-slider-thumb {
    @apply appearance-none bg-neutral-200 h-5 w-[4px] rounded-full;
