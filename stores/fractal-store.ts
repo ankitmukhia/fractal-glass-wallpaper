@@ -1,12 +1,9 @@
 import { create } from "zustand";
 
-interface FractalStore {
-	size: number,
-	setSize: (v: number) => void;
+interface StoreProps {
+	resolution: { width: number, height: number }
 }
 
-export const useStore = create<FractalStore>((set) => ({
-	// initial state
-	size: 0,
-	setSize: () => set((v) => v)
+export const useStore = create<StoreProps>(() => ({
+	resolution: { width: 1920, height: 1080 }
 }));

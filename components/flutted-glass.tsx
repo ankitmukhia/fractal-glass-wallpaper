@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { drawWaveShape } from "@/lib/utils/shape";
 import { gradientPalettes, backgroundGradientPalettes } from "@/lib/constants";
+import { useStore } from "@/stores/fractal-store";
 
 const imageUrl =
 	"https://images.unsplash.com/photo-1750593693963-94991e151e77?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170";
@@ -9,6 +10,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 	size: number,
 	sizeRef: any
 }) => {
+	const store = useStore();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const programRef = useRef<WebGLProgram | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
@@ -16,11 +18,11 @@ export const FluttedGlass = ({ size, sizeRef }: {
 	const uniformsRef = useRef<any>(null);
 	const renderRef = useRef<() => void>(() => { });
 
+	const RESOLUTION_WIDTH = store.resolution.width;
+	const RESOLUTION_HEIGHT = store.resolution.height;
+
 	// Toggle between image and solid color
 	const withImage = false;
-
-	const CSS_WIDTH = 900;
-	const CSS_HEIGHT = 600;
 
 	const distortion = 1.0;
 	const shift = 0.0;
@@ -186,7 +188,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			const gradCanvas = document.createElement("canvas");
 			const ctx = gradCanvas.getContext("2d")!;
 
-			const backgroundGradient = ctx.createLinearGradient(0, 0, CSS_WIDTH, CSS_HEIGHT);
+			const backgroundGradient = ctx.createLinearGradient(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 
 			backgroundGradientPalettes.forEach((palette) => {
 				palette.colors.forEach((color, index) => {
@@ -199,7 +201,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 
 			ctx.fillStyle = backgroundGradient;
 			ctx.filter = `blur(50px) brightness(100%) contrast(100%) saturate(100%)`;
-			ctx.fillRect(0, 0, CSS_WIDTH, CSS_HEIGHT);
+			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_WIDTH);
 			ctx.filter = "none"
 
 			// random wave shape on gradCanvas 
@@ -247,13 +249,11 @@ export const FluttedGlass = ({ size, sizeRef }: {
 		uniformsRef.current = uniforms;
 
 		function resizeCanvasToDisplaySize() {
-			const width = CSS_WIDTH;
-			const height = CSS_HEIGHT;
-			if (canvas.width !== width || canvas.height !== height) {
-				canvas.width = width;
-				canvas.height = height;
-				canvas.style.width = `${CSS_WIDTH}px`;
-				canvas.style.height = `${CSS_HEIGHT}px`;
+			if (canvas.width !== RESOLUTION_WIDTH || canvas.height !== RESOLUTION_HEIGHT) {
+				canvas.width = RESOLUTION_WIDTH;
+				canvas.height = RESOLUTION_HEIGHT;
+				canvas.style.width = `${RESOLUTION_WIDTH}px`;
+				canvas.style.height = `${RESOLUTION_HEIGHT}px`;
 			}
 			gl.viewport(0, 0, canvas.width, canvas.height);
 		}
@@ -272,14 +272,13 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.uniform1i(uniforms.u_image, 0);
 
-			gl.uniform2f(uniforms.u_resolution, CSS_WIDTH, CSS_HEIGHT);
+			gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 			gl.uniform1f(uniforms.u_size, sizeRef.current);
 			gl.uniform1f(uniforms.u_distortion, distortion);
 			gl.uniform1f(uniforms.u_shift, shift);
 			gl.uniform1f(uniforms.u_margin, margin);
 
 			if (withImage) {
-
 				gl.uniform1f(uniforms.u_imageAspect, 1.0);
 			} else {
 				gl.uniform1f(uniforms.u_imageAspect, 1.0);
@@ -308,7 +307,6 @@ export const FluttedGlass = ({ size, sizeRef }: {
 				render();
 			};
 			img.onerror = (e) => {
-
 				console.error("Failed to load image", e);
 			};
 		} else {
@@ -347,19 +345,16 @@ export const FluttedGlass = ({ size, sizeRef }: {
 	})
 
 	return (
-		<div className="flex flex-col items-center justify-center gap-2">
-			<canvas
-				ref={canvasRef}
-				width={CSS_WIDTH}
-				height={CSS_HEIGHT}
-				style={{
-					display: "block",
-					width: "100%",
-					height: "100%",
-					boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-					borderRadius: 25,
-				}}
-			/>
-		</div>
+		<canvas
+			ref={canvasRef}
+			width={store.resolution.width}
+			height={store.resolution.height}
+			style={{
+				width: "100%",
+				height: "100%",
+				boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+				borderRadius: 50,
+			}}
+		/>
 	);
 };

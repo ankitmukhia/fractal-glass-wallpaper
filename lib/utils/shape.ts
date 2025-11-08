@@ -86,7 +86,7 @@ export function drawWaveShape(
 export function getRangeStep(max: number, min: number, step: number, size: number) {
 	const totalStops = Math.round((max - min) / step);
 	const dots = Array.from({ length: totalStops + 1 }, (_, i) => min + i * step);
-	const percentage = (size / max) * 100
+	const percentage = ((size - min) / (max - min)) * 100;
 
 	return {
 		dots,
