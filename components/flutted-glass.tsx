@@ -3,13 +3,24 @@ import { drawWaveShape } from "@/lib/utils/shape";
 import { gradientPalettes, backgroundGradientPalettes } from "@/lib/constants";
 import { useStore } from "@/stores/fractal-store";
 
-const imageUrl =
-	"https://images.unsplash.com/photo-1750593693963-94991e151e77?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170";
-
-export const FluttedGlass = ({ size, sizeRef }: {
-	size: number,
-	sizeRef: any
+export const FluttedGlass = ({
+	size,
+	sizeRef,
+	distortion,
+	distortionRef,
+	fractalMargin,
+	fractalMarginRef,
+	bgImage = "https://images.unsplash.com/photo-1761469872979-dab2084d7b49?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470"
+}: {
+	size: number;
+	sizeRef: any;
+	distortion: number;
+	distortionRef: any;
+	fractalMargin: number;
+	fractalMarginRef: any
+	bgImage: string;
 }) => {
+	console.log(bgImage)
 	const store = useStore();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const programRef = useRef<WebGLProgram | null>(null);
@@ -22,11 +33,9 @@ export const FluttedGlass = ({ size, sizeRef }: {
 	const RESOLUTION_HEIGHT = store.resolution.height;
 
 	// Toggle between image and solid color
-	const withImage = false;
+	const withImage = true;
 
-	const distortion = 1.0;
 	const shift = 0.0;
-	const margin = 0.0;
 
 	useEffect(() => {
 		const canvas = canvasRef.current!;
@@ -87,7 +96,6 @@ export const FluttedGlass = ({ size, sizeRef }: {
         return;
       }
 
-
       float effectSize = 1.0 / pow(0.7 * (u_size + 0.5), 6.0);
       float stripeCount = effectSize;
 
@@ -96,7 +104,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
       float fracInStripe = fract(coord);
 
       float base = -pow(1.5 * fracInStripe, 3.0) + (0.5 + u_shift);
-      float xDist = 0.5 + (base - 0.5) * u_distortion;
+			float xDist = 0.5 + (base - 0.5) * u_distortion;
 
       float sampledX = (stripeIndex + xDist) / stripeCount;
       sampledX = clamp(sampledX, 0.0, 1.0);
@@ -105,38 +113,47 @@ export const FluttedGlass = ({ size, sizeRef }: {
       fragColor = texture(u_image, sampledUV);
     }`;
 
-		function compileShader(type: number, source: string) {
-			const s = gl.createShader(type)!;
-			gl.shaderSource(s, source);
-			gl.compileShader(s);
-			if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-				console.error("Shader compile error:", gl.getShaderInfoLog(s));
-				gl.deleteShader(s);
+		function compileShader(shaderType: number, shaderSource: string) {
+			const shader = gl.createShader(shaderType)!;
+			gl.shaderSource(shader, shaderSource); // stores in gpu memory
+			gl.compileShader(shader); // compile it
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+				gl.deleteShader(shader); // clean shader if err
 				return null;
 			}
-			return s;
+			return shader;
 		}
 
+		function createProgram(
+			vertexShaderSource: string,
+			fragmentShaderSource: string,
+		) {
+			// compile both shaders
+			const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
+			const fragmentShader = compileShader(
+				gl.FRAGMENT_SHADER,
+				fragmentShaderSource,
+			);
 
-		function createProgram(vsSource: string, fsSource: string) {
-			const vs = compileShader(gl.VERTEX_SHADER, vsSource);
-			const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+			if (!vertexShader || !fragmentShader) return null;
 
-			if (!vs || !fs) return null;
-			const p = gl.createProgram()!;
-			gl.attachShader(p, vs);
-			gl.attachShader(p, fs);
-			gl.linkProgram(p);
-			if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-				console.error("Program link error:", gl.getProgramInfoLog(p));
-				gl.deleteProgram(p);
+			const program = gl.createProgram()!; // container holds both vertex and fragment
+			gl.attachShader(program, vertexShader);
+			gl.attachShader(program, fragmentShader);
+			gl.linkProgram(program); // join into one usable gpu program
+			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+				console.error("Program link error:", gl.getProgramInfoLog(program));
+				gl.deleteProgram(program);
 				return null;
 			}
-			gl.detachShader(p, vs);
-			gl.detachShader(p, fs);
-			gl.deleteShader(vs);
-			gl.deleteShader(fs);
-			return p;
+
+			// clear indivicual shader files. already merged
+			gl.detachShader(program, vertexShader);
+			gl.detachShader(program, fragmentShader);
+			gl.deleteShader(vertexShader);
+			gl.deleteShader(fragmentShader);
+			return program;
 		}
 
 		const program = createProgram(vertexSource, fragmentSource);
@@ -144,7 +161,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			console.error("Failed to create program");
 			return;
 		}
-		programRef.current = program;
+		programRef.current = program; // store accross re-render
 
 		// Full-screen triangle
 		const quadVerts = new Float32Array([-1, -1, 3, -1, -1, 3]);
@@ -169,9 +186,8 @@ export const FluttedGlass = ({ size, sizeRef }: {
 		texRef.current = texture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 
-
 		if (withImage) {
-			// placeholder magenta texture before image loads
+			// placeholder texture before image loads
 			gl.texImage2D(
 				gl.TEXTURE_2D,
 				0,
@@ -188,33 +204,35 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			const gradCanvas = document.createElement("canvas");
 			const ctx = gradCanvas.getContext("2d")!;
 
-			const backgroundGradient = ctx.createLinearGradient(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+			const backgroundGradient = ctx.createLinearGradient(
+				0,
+				0,
+				RESOLUTION_WIDTH,
+				RESOLUTION_HEIGHT,
+			);
 
 			backgroundGradientPalettes.forEach((palette) => {
 				palette.colors.forEach((color, index) => {
 					const stop = index / (palette.colors.length - 1);
-
-					const rgba = `rgba(${color.r}, ${color.g}, ${color.b})`
-					backgroundGradient.addColorStop(stop, rgba)
-				})
-			})
+					const rgba = `rgba(${color.r}, ${color.g}, ${color.b})`;
+					backgroundGradient.addColorStop(stop, rgba);
+				});
+			});
 
 			ctx.fillStyle = backgroundGradient;
 			ctx.filter = `blur(50px) brightness(100%) contrast(100%) saturate(100%)`;
 			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_WIDTH);
-			ctx.filter = "none"
+			ctx.filter = "none";
 
-			// random wave shape on gradCanvas 
+			// random wave shape on gradCanvas
 			const ctxShapes = gradCanvas.getContext("2d")!;
 
 			gradientPalettes.forEach((palette) => {
-				drawWaveShape(ctxShapes,
-					{
-						x: Math.random() * 100,
-						y: Math.random() * 100,
-						palette: palette,
-					}
-				);
+				drawWaveShape(ctxShapes, {
+					x: Math.random() * 100,
+					y: Math.random() * 100,
+					palette: palette,
+				});
 			});
 
 			// Upload gradient as WebGL texture
@@ -226,7 +244,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 				gl.RGBA,
 				gl.UNSIGNED_BYTE,
 
-				gradCanvas
+				gradCanvas,
 			);
 		}
 
@@ -236,6 +254,7 @@ export const FluttedGlass = ({ size, sizeRef }: {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
+		// refrence to shader var
 		const uniforms = {
 			u_image: gl.getUniformLocation(program, "u_image"),
 			u_imageAspect: gl.getUniformLocation(program, "u_imageAspect"),
@@ -243,13 +262,15 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			u_size: gl.getUniformLocation(program, "u_size"),
 			u_distortion: gl.getUniformLocation(program, "u_distortion"),
 			u_shift: gl.getUniformLocation(program, "u_shift"),
-
 			u_margin: gl.getUniformLocation(program, "u_margin"),
 		};
-		uniformsRef.current = uniforms;
+		uniformsRef.current = uniforms; // store accross re-render for later use
 
 		function resizeCanvasToDisplaySize() {
-			if (canvas.width !== RESOLUTION_WIDTH || canvas.height !== RESOLUTION_HEIGHT) {
+			if (
+				canvas.width !== RESOLUTION_WIDTH ||
+				canvas.height !== RESOLUTION_HEIGHT
+			) {
 				canvas.width = RESOLUTION_WIDTH;
 				canvas.height = RESOLUTION_HEIGHT;
 				canvas.style.width = `${RESOLUTION_WIDTH}px`;
@@ -265,24 +286,24 @@ export const FluttedGlass = ({ size, sizeRef }: {
 			gl.clearColor(0, 0, 0, 0);
 			gl.clear(gl.COLOR_BUFFER_BIT);
 
-			gl.useProgram(program);
+			gl.useProgram(program); // activate gpu program
 			gl.bindVertexArray(vao);
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
 			gl.uniform1i(uniforms.u_image, 0);
 
+			// send dynamic value to shaders
 			gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 			gl.uniform1f(uniforms.u_size, sizeRef.current);
-			gl.uniform1f(uniforms.u_distortion, distortion);
+			gl.uniform1f(uniforms.u_distortion, distortionRef.current);
 			gl.uniform1f(uniforms.u_shift, shift);
-			gl.uniform1f(uniforms.u_margin, margin);
+			gl.uniform1f(uniforms.u_margin, fractalMarginRef.current);
 
-			if (withImage) {
-				gl.uniform1f(uniforms.u_imageAspect, 1.0);
-			} else {
-				gl.uniform1f(uniforms.u_imageAspect, 1.0);
-			}
+			// default aspect ratio
+			/* gl.uniform1f(uniforms.u_imageAspect, 1.0); */
+			const screenAspect = RESOLUTION_WIDTH / RESOLUTION_HEIGHT;
+			gl.uniform1f(uniforms.u_imageAspect, screenAspect);
 
 			gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -296,12 +317,24 @@ export const FluttedGlass = ({ size, sizeRef }: {
 		if (withImage) {
 			const img = new Image();
 			img.crossOrigin = "anonymous";
-			img.src = imageUrl;
+			img.src = bgImage;
 			img.onload = () => {
 				if (!gl) return;
 				gl.bindTexture(gl.TEXTURE_2D, texture);
 				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+				gl.texImage2D(
+					gl.TEXTURE_2D,
+					0,
+					gl.RGBA,
+					gl.RGBA,
+					gl.UNSIGNED_BYTE,
+					img,
+				);
+
+				const aspect = img.width / img.height;
+				gl.useProgram(program);
+				gl.uniform1f(uniforms.u_imageAspect, aspect);
+				gl.useProgram(null);
 
 				gl.bindTexture(gl.TEXTURE_2D, null);
 				render();
@@ -340,9 +373,11 @@ export const FluttedGlass = ({ size, sizeRef }: {
 		if (gl && program && uniforms) {
 			gl.useProgram(program);
 			gl.uniform1f(uniforms.u_size, size);
+			gl.uniform1f(uniforms.u_size, distortion);
+			gl.uniform1f(uniforms.u_size, fractalMargin);
 			render();
 		}
-	})
+	});
 
 	return (
 		<canvas
