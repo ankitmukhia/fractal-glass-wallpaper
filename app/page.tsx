@@ -9,8 +9,8 @@ import {
 	ChevronDownIcon,
 	Plus,
 	MinusIcon,
-	ChevronRightIcon,
-	ChevronLeftIcon,
+	MoveRightIcon,
+	MoveLeftIcon,
 	UploadIcon,
 } from "lucide-react";
 import { RangeInput } from "@/components/ui/range-input";
@@ -23,6 +23,9 @@ import {
 	DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { DndContext, useDraggable, DragEndEvent } from "@dnd-kit/core";
 
@@ -48,9 +51,10 @@ function Movable({ children }: { children: React.ReactNode }) {
 export default function Home() {
 	const store = useStore();
 	const imageInputRef = useRef<HTMLInputElement>(null);
-	const [bgImage, setBgImage] = useState("");
+	const [bgImage, setBgImage] = useState({ src: "", withImage: false });
 	const [position, setPosition] = useState({ x: 0, y: 0 });
-	const [size, setSize] = useState<number>(0.21);
+
+	const [size, setSize] = useState<number>(0.28);
 	const [zoom, setZoom] = useState(0.4);
 	const sizeRef = useRef<number>(size);
 	sizeRef.current = size;
@@ -63,12 +67,16 @@ export default function Home() {
 	const fractalMarginRef = useRef<number>(fractalMargin);
 	fractalMarginRef.current = fractalMargin;
 
+	const [fractalShadow, setFractalShadow] = useState(0.25);
+	const fractalShadowRef = useRef<number>(fractalShadow);
+	fractalShadowRef.current = fractalShadow;
+
 	function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (file) {
 			const render = new FileReader();
 			render.onloadend = () => {
-				setBgImage(render.result as string)
+				setBgImage({ src: render.result as string, withImage: true })
 			}
 			render.readAsDataURL(file)
 		}
@@ -92,6 +100,12 @@ export default function Home() {
 		fractalMarginRef.current = v;
 	}
 
+	function handleFractalShadowChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const v = parseFloat(e.target.value);
+		setFractalShadow(v);
+		fractalShadowRef.current = v;
+	}
+
 	const handleDragEnd = (e: DragEndEvent) => {
 		const { delta } = e;
 
@@ -107,90 +121,152 @@ export default function Home() {
 				{/* Left side bar */}
 
 				<div className="max-w-[300px] bg-white border-2 border-neutral-200/60 rounded-3xl">
-					<div className="flex flex-col h-full p-4 space-y-2">
-						<div
-							className="relative flex items-center gap-2 border rounded-xl p-2 cursor-pointer"
-							onClick={() => {
-								if (imageInputRef.current) {
-									imageInputRef.current.click();
-								}
-							}}
-						>
-							<UploadIcon className="size-4" />
-
-							<input
-								ref={imageInputRef}
-								onChange={handleImageSelect}
-								type="file"
-								className="hidden"
-							/>
-
-							<p>Upload Image</p>
+					<div className="flex flex-col w-full h-full">
+						<div className="p-4">
+							<div
+								className="relative flex items-center gap-2 border border-neutral-100 rounded-xl p-2 cursor-pointer"
+								onClick={() => {
+									if (imageInputRef.current) {
+										imageInputRef.current.click();
+									}
+								}}
+							>
+								<UploadIcon className="size-4 text-neutral-400" />
+								<Input
+									ref={imageInputRef}
+									onChange={handleImageSelect}
+									accept="image/*"
+									type="file"
+									className="hidden"
+								/>
+								<p className="font-semibold text-neutral-400">Upload Image</p>
+							</div>
 						</div>
 
-						<RangeInput
-							label="Distrotion"
-							min={defaultRangeValues.distrotion.min}
-							max={defaultRangeValues.distrotion.max}
-							step={defaultRangeValues.distrotion.step}
-							size={distrotion}
-							onChange={handleDistrotionChange}
-						/>
+						<Separator className="bg-neutral-100" />
 
-						<RangeInput
-							label="Shadow"
-							min={0}
-							max={100}
-							step={2}
-							size={80}
-							onChange={handleSizeChange}
-						/>
+						<div className="space-y-2 p-4">
+							<RangeInput
+								label="Size"
+								min={defaultRangeValues.size.min}
+								max={defaultRangeValues.size.max}
+								step={defaultRangeValues.size.step}
+								size={size}
+								onChange={handleSizeChange}
+							/>
 
-						<RangeInput
-							label="Highlights"
-							min={0}
-							max={100}
-							step={2}
-							size={35}
-							onChange={handleSizeChange}
-						/>
+							<RangeInput
+								label="Distrotion"
+								min={defaultRangeValues.distrotion.min}
+								max={defaultRangeValues.distrotion.max}
+								step={defaultRangeValues.distrotion.step}
+								size={distrotion}
+								onChange={handleDistrotionChange}
+							/>
 
-						{/* It controls that bg edge strtching */}
-						<RangeInput
-							label="Stretch"
-							min={0}
-							max={100}
-							step={2}
-							size={60}
-							onChange={handleSizeChange}
-						/>
+							<RangeInput
+								label="Shadow"
+								min={defaultRangeValues.shadow.min}
+								max={defaultRangeValues.shadow.max}
+								step={defaultRangeValues.shadow.step}
+								size={fractalShadow}
+								onChange={handleFractalShadowChange}
+							/>
 
-						<RangeInput
-							label="Blur"
-							min={0}
-							max={100}
-							step={2}
-							size={20}
-							onChange={handleSizeChange}
-						/>
+							{/* It controls that bg edge strtching */}
+							<RangeInput
+								label="Stretch"
+								min={0}
+								max={100}
+								step={2}
+								size={60}
+								onChange={() => { }}
+							/>
 
-						<RangeInput
-							label="Margin"
-							min={defaultRangeValues.fractalMargin.min}
-							max={defaultRangeValues.fractalMargin.max}
-							step={defaultRangeValues.fractalMargin.step}
-							size={fractalMargin}
-							onChange={handleFractalMarginChange}
-						/>
+							<RangeInput
+								label="Blur"
+								min={0}
+								max={100}
+								step={2}
+								size={20}
+								onChange={() => { }}
+							/>
 
-						<RangeInput
-							label="Size"
-							min={defaultRangeValues.size.min}
-							max={defaultRangeValues.size.max}
-							step={defaultRangeValues.size.step}
-							size={size}
-							onChange={handleSizeChange}
-						/>
+							<RangeInput
+								label="Margin"
+								min={defaultRangeValues.fractalMargin.min}
+								max={defaultRangeValues.fractalMargin.max}
+								step={defaultRangeValues.fractalMargin.step}
+								size={fractalMargin}
+								onChange={handleFractalMarginChange}
+							/>
+						</div>
+
+						<Separator className="bg-neutral-100" />
+
+						<Tabs defaultValue="background" className="w-full p-4">
+							<TabsList className="w-full h-10">
+								<TabsTrigger value="background">
+									Background
+								</TabsTrigger>
+								<TabsTrigger value="shape">
+									Shape
+								</TabsTrigger>
+							</TabsList>
+
+							<Separator className="bg-neutral-100" />
+
+							<TabsContent value="background">
+								<div className="flex flex-col gap-2">
+									<RangeInput
+										label="Blur"
+										min={0}
+										max={100}
+										step={2}
+										size={60}
+										onChange={() => { }}
+									/>
+
+									<RangeInput
+										label="Brightness"
+										min={0}
+										max={200}
+										step={2}
+										size={10}
+										onChange={() => { }}
+									/>
+
+									<RangeInput
+										label="Contrast"
+										min={0}
+										max={200}
+										step={2}
+										size={70}
+										onChange={() => { }}
+									/>
+
+									<RangeInput
+										label="Saturate"
+										min={0}
+										max={200}
+										step={2}
+										size={10}
+										onChange={() => { }}
+									/>
+								</div>
+							</TabsContent>
+
+							<TabsContent value="shape">
+								<RangeInput
+									label="Stretch"
+									min={0}
+									max={100}
+									step={2}
+									size={60}
+									onChange={() => { }}
+								/>
+							</TabsContent>
+						</Tabs>
 					</div>
 				</div>
 
@@ -231,7 +307,7 @@ export default function Home() {
 									setPosition((prev) => ({ x: prev.x - 40, y: prev.y }))
 								}
 							>
-								<ChevronLeftIcon />
+							<svg className="inline-flex size-5 fill-primary rotate-180" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
 							</Button>
 							<Button
 								variant="link"
@@ -240,7 +316,7 @@ export default function Home() {
 									setPosition((prev) => ({ x: prev.x + 40, y: prev.y }))
 								}
 							>
-								<ChevronRightIcon />
+								<svg className="inline-flex size-5 fill-primary" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
 							</Button>
 						</div>
 
@@ -278,6 +354,8 @@ export default function Home() {
 										distortionRef={distortionRef}
 										fractalMargin={fractalMargin}
 										fractalMarginRef={fractalMarginRef}
+										fractalShadow={fractalShadow}
+										fractalShadowRef={fractalShadowRef}
 										bgImage={bgImage}
 									/>
 								</div>

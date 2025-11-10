@@ -1,3 +1,4 @@
+// have a feature to add/positning shape as user please.
 export function drawWaveShape(
   ctx: CanvasRenderingContext2D,
   position: {

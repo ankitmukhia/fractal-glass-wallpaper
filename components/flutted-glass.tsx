@@ -3,6 +3,23 @@ import { drawWaveShape } from "@/lib/utils/shape";
 import { gradientPalettes, backgroundGradientPalettes } from "@/lib/constants";
 import { useStore } from "@/stores/fractal-store";
 
+interface BgImageProps {
+	src: string;
+	withImage: boolean;
+}
+
+interface FluttedGlassProps {
+	size: number;
+	sizeRef: any;
+	distortion: number;
+	distortionRef: any;
+	fractalMargin: number;
+	fractalMarginRef: any;
+	fractalShadow: any;
+	fractalShadowRef: any;
+	bgImage: BgImageProps;
+}
+
 export const FluttedGlass = ({
 	size,
 	sizeRef,
@@ -10,17 +27,10 @@ export const FluttedGlass = ({
 	distortionRef,
 	fractalMargin,
 	fractalMarginRef,
-	bgImage = "https://images.unsplash.com/photo-1761469872979-dab2084d7b49?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1470"
-}: {
-	size: number;
-	sizeRef: any;
-	distortion: number;
-	distortionRef: any;
-	fractalMargin: number;
-	fractalMarginRef: any
-	bgImage: string;
-}) => {
-	console.log(bgImage)
+	fractalShadow,
+	fractalShadowRef,
+	bgImage,
+}: FluttedGlassProps) => {
 	const store = useStore();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const programRef = useRef<WebGLProgram | null>(null);
@@ -31,9 +41,6 @@ export const FluttedGlass = ({
 
 	const RESOLUTION_WIDTH = store.resolution.width;
 	const RESOLUTION_HEIGHT = store.resolution.height;
-
-	// Toggle between image and solid color
-	const withImage = true;
 
 	const shift = 0.0;
 
@@ -71,6 +78,7 @@ export const FluttedGlass = ({
     uniform float u_distortion;
     uniform float u_shift;
     uniform float u_margin;
+    uniform float u_shadow;
 
     vec2 coverUV(vec2 uv) {
       float imgRatio = u_imageAspect;
@@ -110,7 +118,12 @@ export const FluttedGlass = ({
       sampledX = clamp(sampledX, 0.0, 1.0);
 
       vec2 sampledUV = vec2(sampledX, imgUV.y);
-      fragColor = texture(u_image, sampledUV);
+      vec4 color = texture(u_image, sampledUV);;
+
+			float shadowStrength = abs(base - 0.5) * (u_shadow * 0.3);
+			color.rgb *= (1.0 - shadowStrength);
+
+			fragColor = color;
     }`;
 
 		function compileShader(shaderType: number, shaderSource: string) {
@@ -186,7 +199,7 @@ export const FluttedGlass = ({
 		texRef.current = texture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 
-		if (withImage) {
+		if (bgImage.withImage) {
 			// placeholder texture before image loads
 			gl.texImage2D(
 				gl.TEXTURE_2D,
@@ -197,7 +210,7 @@ export const FluttedGlass = ({
 				0,
 				gl.RGBA,
 				gl.UNSIGNED_BYTE,
-				new Uint8Array([255, 0, 255, 255]),
+				new Uint8Array([0, 0, 0, 255]),
 			);
 		} else {
 			// gradient texture
@@ -220,7 +233,7 @@ export const FluttedGlass = ({
 			});
 
 			ctx.fillStyle = backgroundGradient;
-			ctx.filter = `blur(50px) brightness(100%) contrast(100%) saturate(100%)`;
+			ctx.filter = `blur(30px) brightness(100%) contrast(100%) saturate(100%)`;
 			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_WIDTH);
 			ctx.filter = "none";
 
@@ -263,6 +276,7 @@ export const FluttedGlass = ({
 			u_distortion: gl.getUniformLocation(program, "u_distortion"),
 			u_shift: gl.getUniformLocation(program, "u_shift"),
 			u_margin: gl.getUniformLocation(program, "u_margin"),
+			u_shadow: gl.getUniformLocation(program, "u_shadow"),
 		};
 		uniformsRef.current = uniforms; // store accross re-render for later use
 
@@ -299,6 +313,7 @@ export const FluttedGlass = ({
 			gl.uniform1f(uniforms.u_distortion, distortionRef.current);
 			gl.uniform1f(uniforms.u_shift, shift);
 			gl.uniform1f(uniforms.u_margin, fractalMarginRef.current);
+			gl.uniform1f(uniforms.u_shadow, fractalShadowRef.current);
 
 			// default aspect ratio
 			/* gl.uniform1f(uniforms.u_imageAspect, 1.0); */
@@ -310,14 +325,13 @@ export const FluttedGlass = ({
 			gl.bindVertexArray(null);
 			gl.useProgram(null);
 		}
-
 		renderRef.current = render;
 
 		// Load image only if withImage = true
-		if (withImage) {
+		if (bgImage.withImage) {
 			const img = new Image();
 			img.crossOrigin = "anonymous";
-			img.src = bgImage;
+			img.src = bgImage.src;
 			img.onload = () => {
 				if (!gl) return;
 				gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -361,7 +375,7 @@ export const FluttedGlass = ({
 				glRef.current = null;
 			}
 		};
-	}, []);
+	}, [bgImage.withImage, bgImage.src]);
 
 	// re-render shader when size change
 	useEffect(() => {
@@ -373,8 +387,9 @@ export const FluttedGlass = ({
 		if (gl && program && uniforms) {
 			gl.useProgram(program);
 			gl.uniform1f(uniforms.u_size, size);
-			gl.uniform1f(uniforms.u_size, distortion);
-			gl.uniform1f(uniforms.u_size, fractalMargin);
+			gl.uniform1f(uniforms.u_distortion, distortion);
+			gl.uniform1f(uniforms.u_margin, fractalMargin);
+			gl.uniform1f(uniforms.u_shadow, fractalShadow);
 			render();
 		}
 	});
@@ -388,7 +403,7 @@ export const FluttedGlass = ({
 				width: "100%",
 				height: "100%",
 				boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-				borderRadius: 50,
+				borderRadius: 55,
 			}}
 		/>
 	);
