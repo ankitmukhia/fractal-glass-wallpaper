@@ -1,7 +1,7 @@
 // have a feature to add/positning shape as user please.
 import { useStore } from "@/stores/fractal-store";
 
-export function drawWaveShape(
+export function drawBlobShape(
   ctx: CanvasRenderingContext2D,
   position: {
     x: number;
@@ -9,83 +9,96 @@ export function drawWaveShape(
     palette: { colors: Array<string> };
   },
 ) {
-  const path = new Path2D();
+  const { width, height } = ctx.canvas;
+  const numBlobs = Math.floor(Math.random() * 5) + 1; // 1–5 blobs
+  const blobs: { x: number; y: number; radius: number }[] = [];
 
-  const fullWidth = ctx.canvas.width;
-  const fullHeight = ctx.canvas.height;
+  // Helper: prevent overlapping
+  function overlaps(x: number, y: number, r: number) {
+    return blobs.some((b) => {
+      const dx = x - b.x;
+      const dy = y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      return dist < r + b.radius + 30; // 30px buffer to keep them apart
+    });
+  }
 
-  const direction = Math.random() > 0.5 ? 1 : -1; // left→right or right→left
-  const xStart = direction === 1 ? 0 : fullWidth;
-  const xEnd = direction === 1 ? fullWidth : 0;
-  const yBase = (position.y / 100) * fullHeight;
+  // Generate blobs (largest first)
+  let tries = 0;
+  while (blobs.length < numBlobs && tries < 1500) {
+    tries++;
+    const baseRadius = 100 + Math.random() * 120;
+    const largestBoost = blobs.length === 0 ? 2.3 : 1; // biggest one larger
+    const radius = baseRadius * largestBoost;
 
-  // random gentle tilt
-  const rotation = ((Math.random() - 0.5) * 20 * Math.PI) / 180;
-  ctx.save();
-  ctx.translate(fullWidth / 2, yBase);
-  ctx.rotate(rotation);
-  ctx.translate(-fullWidth / 2, -yBase);
+    const safeMargin = radius + 20;
+    const x = safeMargin + Math.random() * (width - safeMargin * 2);
+    const y = safeMargin + Math.random() * (height - safeMargin * 2);
 
-  // --- dramatic curvature control ---
-  const midYShift = (Math.random() - 0.5) * fullHeight * 0.9; // huge sweep in the middle
-  const endYShift = (Math.random() - 0.5) * fullHeight * 0.8; // final bend
-  const curveStrength = 1.8 + Math.random() * 0.6; // exaggeration multiplier
+    if (!overlaps(x, y, radius)) {
+      blobs.push({ x, y, radius });
+    }
+  }
 
-  // --- thickness profile ---
-  const bottomShift = fullHeight * (0.25 + Math.random() * 0.15); // thicker
-  const topOffset = 0; // top follows the curve
-
-  const endThicknessBoost = 1.5 + Math.random() * 1.0;
-
-  // --- Top curve (major swoop) ---
-  path.moveTo(xStart, yBase + topOffset);
-
-  const cp1x = xStart + (fullWidth / 3) * direction;
-
-  const cp1y = yBase - midYShift * 1.6 * curveStrength; // huge bend upward/downward
-
-  const cp2x = xStart + ((2 * fullWidth) / 3) * direction;
-  const cp2y = yBase + midYShift * 1.9 * curveStrength + endYShift * 0.9;
-
-  path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xEnd, yBase + endYShift);
-
-  // --- Bottom curve (mirrors but thicker, exaggerated offset) ---
-  const bcp1x = xStart + ((2 * fullWidth) / 3) * direction;
-  const bcp1y =
-    yBase + bottomShift * endThicknessBoost + midYShift * 1.3 * curveStrength;
-
-  const bcp2x = xStart + (fullWidth / 3) * direction;
-  const bcp2y = yBase + bottomShift * 0.8 + midYShift * 0.8 * curveStrength;
-
-  path.bezierCurveTo(
-    bcp1x,
-    bcp1y,
-    bcp2x,
-    bcp2y,
-    xStart,
-    yBase + bottomShift * endThicknessBoost,
+  // Gradient
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  position.palette.colors.forEach((hex, i) =>
+    gradient.addColorStop(i / (position.palette.colors.length - 1), `#${hex}`),
   );
 
-  const gradient = ctx.createLinearGradient(0, 0, fullWidth, 0);
+  const filters = useStore.getState().shapeGradientFilters;
+  ctx.filter = [
+    `blur(${filters.blur}px)`,
+    `brightness(${filters.brightness}%)`,
+    `contrast(${filters.contrast}%)`,
+    `saturate(${filters.saturation}%)`,
+  ].join(" ");
+  ctx.fillStyle = gradient;
 
-  position.palette.colors.forEach((hex, index) => {
-    const stop = index / (position.palette.colors.length - 1);
-    gradient.addColorStop(stop, `#${hex}`);
+  // --- Draw each blob ---
+  blobs.forEach((blob) => {
+    const path = new Path2D();
+
+    const points: { x: number; y: number }[] = [];
+    const numPoints = 10 + Math.floor(Math.random() * 6); // 10–15 control points
+    const angleStep = (Math.PI * 2) / numPoints;
+
+    // create random circular points
+    for (let i = 0; i < numPoints; i++) {
+      const angle = i * angleStep;
+      const radiusJitter = blob.radius * (0.7 + Math.random() * 0.6); // smooth but random radius
+      points.push({
+        x: blob.x + Math.cos(angle) * radiusJitter,
+        y: blob.y + Math.sin(angle) * radiusJitter,
+      });
+    }
+
+    // --- Use smooth Bézier curve between points ---
+    for (let i = 0; i < points.length; i++) {
+      const p0 = points[(i - 1 + points.length) % points.length];
+      const p1 = points[i];
+
+      const p2 = points[(i + 1) % points.length];
+
+      const p3 = points[(i + 2) % points.length];
+
+      if (i === 0) path.moveTo(p1.x, p1.y);
+
+      // Catmull–Rom to Bézier conversion for smoothness
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+
+    path.closePath();
+    ctx.fill(path);
   });
 
-  path.closePath();
-
-  const filter = [
-    `blur(${useStore.getState().shapeGradientFilters.blur}px) `,
-    `brightness(${useStore.getState().shapeGradientFilters.brightness}%) `,
-    `contrast(${useStore.getState().shapeGradientFilters.contrast}%)`,
-    `saturate(${useStore.getState().shapeGradientFilters.saturation}%)`,
-  ].filter(Boolean).join(" ");
-
-  ctx.filter = filter;
-  ctx.fillStyle = gradient;
-  ctx.fill(path);
-  ctx.restore();
+  ctx.filter = "none";
 }
 
 export function getRangeStep(

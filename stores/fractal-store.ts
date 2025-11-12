@@ -1,3 +1,6 @@
+// have type of gradient/color you are changing state.
+// have one color state so you change that color each time you change in itration.
+//
 import { create } from "zustand";
 import {
   backgroundGradientPalettes,
@@ -25,8 +28,12 @@ interface StoreState {
 }
 
 interface StoreActions {
-  setBackgroundGradient: (hex: string) => void;
-  setShapeGradient: (hex: string) => void;
+  setBackgroundGradient: (
+    paletteName: string,
+    idx: number,
+    newHex: string,
+  ) => void;
+  setShapeGradient: (paletteName: string, idx: number, newHex: string) => void;
   setBackgroundGradientFilters: (key: KeyProps, value: number) => void;
   setShapeGradientFiltersSet: (key: KeyProps, value: number) => void;
 }
@@ -37,24 +44,42 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
   backgroundGradient: backgroundGradientPalettes,
   shapeGradient: gradientShapePalettes,
   backgroundGradientFilters: {
-    blur: 10,
+    blur: 0,
     brightness: 100,
     contrast: 100,
     saturation: 100,
   },
   shapeGradientFilters: {
-    blur: 10,
+    blur: 40,
     brightness: 100,
     contrast: 100,
     saturation: 100,
   },
-  setBackgroundGradient: () =>
+  setBackgroundGradient: (paletteName: string, idx: number, newHex: string) =>
     set((state) => ({
-      backgroundGradient: backgroundGradientPalettes,
+      backgroundGradient: state.backgroundGradient.map((palette) =>
+        palette.name === paletteName
+          ? {
+              ...palette,
+              colors: palette.colors.map((color, colorIdx) =>
+                colorIdx === idx ? newHex : color,
+              ),
+            }
+          : palette,
+      ),
     })),
-  setShapeGradient: () =>
+  setShapeGradient: (paletteName: string, idx: number, nexHex: string) =>
     set((state) => ({
-      shapeGradient: gradientShapePalettes,
+      shapeGradient: state.shapeGradient.map((palette) =>
+        palette.name == paletteName
+          ? {
+              ...palette,
+              colors: palette.colors.map((color, colorIdx) =>
+                colorIdx == idx ? nexHex : color,
+              ),
+            }
+          : palette,
+      ),
     })),
   setBackgroundGradientFilters: (key: KeyProps, value: number) =>
     set((state) => ({

@@ -53,7 +53,7 @@ export default function Home() {
 	const [bgImage, setBgImage] = useState({ src: "", withImage: false });
 	const [position, setPosition] = useState({ x: 0, y: 0 });
 
-	const [size, setSize] = useState<number>(0.29);
+	const [size, setSize] = useState<number>(0.33);
 	const [zoom, setZoom] = useState(0.4);
 	const sizeRef = useRef<number>(size);
 	sizeRef.current = size;
@@ -66,7 +66,7 @@ export default function Home() {
 	const fractalMarginRef = useRef<number>(fractalMargin);
 	fractalMarginRef.current = fractalMargin;
 
-	const [fractalShadow, setFractalShadow] = useState(0.25);
+	const [fractalShadow, setFractalShadow] = useState(0.10);
 	const fractalShadowRef = useRef<number>(fractalShadow);
 	fractalShadowRef.current = fractalShadow;
 
@@ -412,8 +412,8 @@ export default function Home() {
 						</div>
 
 						<div className="flex flex-col gap-2">
-							{store.backgroundGradient.map((palette, idx) => (
-								<div key={idx} className="flex flex-col gap-2">
+							{store.backgroundGradient.map((palette, paletteIdx) => (
+								<div key={paletteIdx} className="flex flex-col gap-2">
 									{palette.colors.map((hex, index) => (
 										<Popover key={index}>
 											<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
@@ -423,12 +423,14 @@ export default function Home() {
 															className="h-9 w-9 rounded-lg"
 															style={{ backgroundColor: `#${hex}` }}
 														/>
-														<span className="text-sm tracking-wide">{"#" + hex}</span>
+														<div>
+															<span className="text-sm tracking-wide">{"#" + hex}</span>
+														</div>
 													</div>
 												</PopoverTrigger>
 
-												<PopoverContent className="w-fit">
-													<HexColorPicker color={hex} onChange={(hex) => store.setBackgroundGradient} />
+												<PopoverContent className="w-auto p-10">
+													<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
 												</PopoverContent>
 											</div>
 										</Popover>
@@ -447,8 +449,8 @@ export default function Home() {
 						</div>
 
 						<div className="flex flex-col gap-2">
-							{store.shapeGradient.map((palette, idx) => (
-								<div key={idx} className="flex flex-col gap-2">
+							{store.shapeGradient.map((palette, paletteIdx) => (
+								<div key={paletteIdx} className="flex flex-col gap-2">
 									{palette.colors.map((hex, index) => (
 										<Popover key={index}>
 											<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
@@ -462,9 +464,10 @@ export default function Home() {
 													</div>
 												</PopoverTrigger>
 
-												<PopoverContent className="w-fit">
+												<PopoverContent className="w-auto p-2">
 													<HexColorPicker
 														color={hex}
+														onChange={(newHex) => store.setShapeGradient(palette.name, index, newHex.slice(1))}
 													/>
 												</PopoverContent>
 											</div>
