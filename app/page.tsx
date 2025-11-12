@@ -1,16 +1,11 @@
 "use client";
 
-// next need to work on state managment
 import { useState, useRef } from "react";
 import { FluttedGlass } from "@/components/flutted-glass";
 import { defaultRangeValues } from "@/lib/constants";
 import {
 	PlusIcon,
 	ChevronDownIcon,
-	Plus,
-	MinusIcon,
-	MoveRightIcon,
-	MoveLeftIcon,
 	UploadIcon,
 } from "lucide-react";
 import { RangeInput } from "@/components/ui/range-input";
@@ -20,13 +15,17 @@ import {
 	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
+import { HexColorPicker } from "react-colorful";
 import { DndContext, useDraggable, DragEndEvent } from "@dnd-kit/core";
 
 function Movable({ children }: { children: React.ReactNode }) {
@@ -54,7 +53,7 @@ export default function Home() {
 	const [bgImage, setBgImage] = useState({ src: "", withImage: false });
 	const [position, setPosition] = useState({ x: 0, y: 0 });
 
-	const [size, setSize] = useState<number>(0.28);
+	const [size, setSize] = useState<number>(0.29);
 	const [zoom, setZoom] = useState(0.4);
 	const sizeRef = useRef<number>(size);
 	sizeRef.current = size;
@@ -104,6 +103,16 @@ export default function Home() {
 		const v = parseFloat(e.target.value);
 		setFractalShadow(v);
 		fractalShadowRef.current = v;
+	}
+
+	function handleBgGradientFilterChange(e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof store.backgroundGradientFilters) {
+		const v = parseFloat(e.target.value);
+		store.setBackgroundGradientFilters(key, v);
+	}
+
+	function handleShapeGradientFilterChange(e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof store.shapeGradientFilters) {
+		const v = parseFloat(e.target.value);
+		store.setShapeGradientFiltersSet(key, v);
 	}
 
 	const handleDragEnd = (e: DragEndEvent) => {
@@ -222,9 +231,27 @@ export default function Home() {
 										label="Blur"
 										min={0}
 										max={100}
-										step={2}
-										size={60}
-										onChange={() => { }}
+										step={1}
+										size={store.backgroundGradientFilters.blur}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "blur")}
+									/>
+
+									<RangeInput
+										label="Saturation"
+										min={0}
+										max={200}
+										step={1}
+										size={store.backgroundGradientFilters.saturation}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "saturation")}
+									/>
+
+									<RangeInput
+										label="Contrast"
+										min={0}
+										max={200}
+										step={1}
+										size={store.backgroundGradientFilters.contrast}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "contrast")}
 									/>
 
 									<RangeInput
@@ -232,39 +259,49 @@ export default function Home() {
 										min={0}
 										max={200}
 										step={2}
-										size={10}
-										onChange={() => { }}
+										size={store.backgroundGradientFilters.brightness}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "brightness")}
+									/>
+								</div>
+							</TabsContent>
+
+							<TabsContent value="shape">
+								<div className="flex flex-col gap-2">
+									<RangeInput
+										label="Blur"
+										min={0}
+										max={100}
+										step={1}
+										size={store.shapeGradientFilters.blur}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "blur")}
+									/>
+									<RangeInput
+										label="Saturation"
+										min={0}
+										max={200}
+										step={1}
+										size={store.shapeGradientFilters.saturation}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "saturation")}
 									/>
 
 									<RangeInput
 										label="Contrast"
 										min={0}
 										max={200}
-										step={2}
-										size={70}
-										onChange={() => { }}
+										step={1}
+										size={store.shapeGradientFilters.contrast}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "contrast")}
 									/>
 
 									<RangeInput
-										label="Saturate"
+										label="Brightness"
 										min={0}
 										max={200}
 										step={2}
-										size={10}
-										onChange={() => { }}
+										size={store.shapeGradientFilters.brightness}
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "brightness")}
 									/>
 								</div>
-							</TabsContent>
-
-							<TabsContent value="shape">
-								<RangeInput
-									label="Stretch"
-									min={0}
-									max={100}
-									step={2}
-									size={60}
-									onChange={() => { }}
-								/>
 							</TabsContent>
 						</Tabs>
 					</div>
@@ -307,7 +344,7 @@ export default function Home() {
 									setPosition((prev) => ({ x: prev.x - 40, y: prev.y }))
 								}
 							>
-							<svg className="inline-flex size-5 fill-primary rotate-180" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+								<svg className="inline-flex size-5 fill-primary rotate-180" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
 							</Button>
 							<Button
 								variant="link"
@@ -368,45 +405,77 @@ export default function Home() {
 				<div className="min-w-[300px] bg-white border-2 border-neutral-200/60 rounded-3xl">
 					<div className="p-4 space-y-4">
 						<div className="flex items-center justify-between">
-							<h1 className="text-sm font-semibold tracking-wide text-neutral-500">
+							<h1 className="text-sm font-semibold tracking-wide">
 								Background
 							</h1>
 							<PlusIcon className="size-4" />
 						</div>
 
 						<div className="flex flex-col gap-2">
-							{Array.from({ length: 5 }).map((_, idx) => (
-								<div
-									key={idx}
-									className="flex items-center gap-2 border border-neutral-100 h-11 px-1 rounded-2xl font-semibold text-neutral-700"
-								>
-									<div className="bg-orange-400 size-7 rounded-lg border border-orange-100" />
-									<span className="">F4F4F4</span>
+							{store.backgroundGradient.map((palette, idx) => (
+								<div key={idx} className="flex flex-col gap-2">
+									{palette.colors.map((hex, index) => (
+										<Popover key={index}>
+											<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
+												<PopoverTrigger asChild>
+													<div className="flex items-center gap-2 font-semibold text-neutral-400">
+														<Button
+															className="h-9 w-9 rounded-lg"
+															style={{ backgroundColor: `#${hex}` }}
+														/>
+														<span className="text-sm tracking-wide">{"#" + hex}</span>
+													</div>
+												</PopoverTrigger>
+
+												<PopoverContent className="w-fit">
+													<HexColorPicker color={hex} onChange={(hex) => store.setBackgroundGradient} />
+												</PopoverContent>
+											</div>
+										</Popover>
+									))}
 								</div>
 							))}
 						</div>
+					</div>
 
+					<div className="p-4 space-y-4">
 						<div className="flex items-center justify-between">
-							<h1 className="text-sm font-semibold tracking-wide text-neutral-500">
+							<h1 className="text-sm font-semibold tracking-wide">
 								Shape
 							</h1>
 							<PlusIcon className="size-4" />
 						</div>
 
 						<div className="flex flex-col gap-2">
-							{Array.from({ length: 5 }).map((_, idx) => (
-								<div
-									key={idx}
-									className="flex items-center gap-2 border border-neutral-100 h-11 px-1 rounded-2xl font-semibold text-neutral-700"
-								>
-									<div className="bg-blue-600 size-7 rounded-lg border border-orange-100" />
-									<span>F4F4F4</span>
+							{store.shapeGradient.map((palette, idx) => (
+								<div key={idx} className="flex flex-col gap-2">
+									{palette.colors.map((hex, index) => (
+										<Popover key={index}>
+											<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
+												<PopoverTrigger asChild>
+													<div className="flex items-center gap-2 font-semibold text-neutral-400">
+														<Button
+															className="h-9 w-9 rounded-lg"
+															style={{ backgroundColor: `#${hex}` }}
+														/>
+														<span className="text-sm tracking-wide">{"#" + hex}</span>
+													</div>
+												</PopoverTrigger>
+
+												<PopoverContent className="w-fit">
+													<HexColorPicker
+														color={hex}
+													/>
+												</PopoverContent>
+											</div>
+										</Popover>
+									))}
 								</div>
 							))}
 						</div>
 					</div>
-				</div>
-			</div>
-		</div>
+				</div >
+			</div >
+		</div >
 	);
 }

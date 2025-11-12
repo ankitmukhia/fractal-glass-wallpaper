@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { drawWaveShape } from "@/lib/utils/shape";
-import { gradientPalettes, backgroundGradientPalettes } from "@/lib/constants";
+import { gradientShapePalettes, backgroundGradientPalettes } from "@/lib/constants";
 import { useStore } from "@/stores/fractal-store";
 
 interface BgImageProps {
@@ -43,6 +43,7 @@ export const FluttedGlass = ({
 	const RESOLUTION_HEIGHT = store.resolution.height;
 
 	const shift = 0.0;
+	const isGradient = true;
 
 	useEffect(() => {
 		const canvas = canvasRef.current!;
@@ -217,36 +218,50 @@ export const FluttedGlass = ({
 			const gradCanvas = document.createElement("canvas");
 			const ctx = gradCanvas.getContext("2d")!;
 
-			const backgroundGradient = ctx.createLinearGradient(
-				0,
-				0,
-				RESOLUTION_WIDTH,
-				RESOLUTION_HEIGHT,
-			);
+			if (isGradient) {
+				const backgroundGradient = ctx.createLinearGradient(
+					0,
+					0,
+					RESOLUTION_WIDTH,
+					0
+				);
 
-			backgroundGradientPalettes.forEach((palette) => {
-				palette.colors.forEach((color, index) => {
-					const stop = index / (palette.colors.length - 1);
-					const rgba = `rgba(${color.r}, ${color.g}, ${color.b})`;
-					backgroundGradient.addColorStop(stop, rgba);
+				backgroundGradientPalettes.forEach((palette) => {
+					palette.colors.forEach((color, index) => {
+						const stop = index / (palette.colors.length - 1);
+						const hex = `#${color}`;
+						backgroundGradient.addColorStop(stop, hex);
+					});
 				});
-			});
 
-			ctx.fillStyle = backgroundGradient;
-			ctx.filter = `blur(30px) brightness(100%) contrast(100%) saturate(100%)`;
+				ctx.fillStyle = backgroundGradient;
+				ctx.filter = "none";
+			} else {
+				ctx.fillStyle = "#5A9690"
+			}
+			
+			// Work on direction of blur
+			const filter = [
+				`blur(${store.backgroundGradientFilters.blur / 8}px) `,
+				`brightness(${store.backgroundGradientFilters.brightness}%) `,
+				`contrast(${store.backgroundGradientFilters.contrast}%)`,
+				`saturate(${store.backgroundGradientFilters.saturation}%)`
+			].filter(Boolean).join(" ");
+
+			ctx.filter = filter;
 			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_WIDTH);
 			ctx.filter = "none";
 
 			// random wave shape on gradCanvas
 			const ctxShapes = gradCanvas.getContext("2d")!;
 
-			gradientPalettes.forEach((palette) => {
+			/* gradientShapePalettes.forEach((palette) => {
 				drawWaveShape(ctxShapes, {
 					x: Math.random() * 100,
 					y: Math.random() * 100,
 					palette: palette,
 				});
-			});
+			}); */
 
 			// Upload gradient as WebGL texture
 			gl.texImage2D(
@@ -375,7 +390,22 @@ export const FluttedGlass = ({
 				glRef.current = null;
 			}
 		};
-	}, [bgImage.withImage, bgImage.src]);
+	}, [
+		bgImage.withImage,
+		bgImage.src,
+		RESOLUTION_WIDTH,
+		RESOLUTION_HEIGHT,
+
+		store.backgroundGradientFilters.blur,
+		store.backgroundGradientFilters.brightness,
+		store.backgroundGradientFilters.contrast,
+		store.backgroundGradientFilters.saturation,
+
+		store.shapeGradientFilters.blur,
+		store.shapeGradientFilters.brightness,
+		store.shapeGradientFilters.contrast,
+		store.shapeGradientFilters.saturation
+	]);
 
 	// re-render shader when size change
 	useEffect(() => {

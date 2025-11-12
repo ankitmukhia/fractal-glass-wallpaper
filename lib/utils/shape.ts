@@ -1,10 +1,12 @@
 // have a feature to add/positning shape as user please.
+import { useStore } from "@/stores/fractal-store";
+
 export function drawWaveShape(
   ctx: CanvasRenderingContext2D,
   position: {
     x: number;
     y: number;
-    palette: { colors: Array<{ r: number; g: number; b: number }> };
+    palette: { colors: Array<string> };
   },
 ) {
   const path = new Path2D();
@@ -64,21 +66,23 @@ export function drawWaveShape(
     yBase + bottomShift * endThicknessBoost,
   );
 
-  const gradient = ctx.createLinearGradient(
-    0,
-    yBase - fullHeight / 3,
-    fullWidth,
-    yBase + fullHeight / 3,
-  );
+  const gradient = ctx.createLinearGradient(0, 0, fullWidth, 0);
 
-  position.palette.colors.forEach((color, index) => {
+  position.palette.colors.forEach((hex, index) => {
     const stop = index / (position.palette.colors.length - 1);
-    const rgba = `rgba(${color.r}, ${color.g}, ${color.b})`;
-    gradient.addColorStop(stop, rgba);
+    gradient.addColorStop(stop, `#${hex}`);
   });
 
   path.closePath();
-  ctx.filter = "blur(10px) brightness(100%) contrast(100%) saturate(100%)";
+
+  const filter = [
+    `blur(${useStore.getState().shapeGradientFilters.blur}px) `,
+    `brightness(${useStore.getState().shapeGradientFilters.brightness}%) `,
+    `contrast(${useStore.getState().shapeGradientFilters.contrast}%)`,
+    `saturate(${useStore.getState().shapeGradientFilters.saturation}%)`,
+  ].filter(Boolean).join(" ");
+
+  ctx.filter = filter;
   ctx.fillStyle = gradient;
   ctx.fill(path);
   ctx.restore();
