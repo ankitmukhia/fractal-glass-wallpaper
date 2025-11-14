@@ -3,74 +3,21 @@ export const backgroundGradientPalettes = [
 	{
 		name: "Serene Nautral Tones",
 		colors: [
-			"2e4932",
-			"36503b",
-			"3e5744",
-			"465e4d",
-			"4d6555",
+			"121216",
+			"17161a",
 		],
 	},
-	/* {
-		name: "Sunset Warmth",
-		colors: [
-			"3d7e86",
-			"337a85",
-			"2a7583",
-			"206f81",
-			"17697d",
-			"0e6279",
-			"055b74",
-			"00536f",
-			"004b69",
-			"004362",
-			"003b5b",
-			"003253",
-			"00294b",
-		]
-	}, */
-	/* {
-		name: "Cool Ocean Breeze",
-		colors: [
-			"355d61",
-			"3c6b6b",
-			"477974",
-			"54877d",
-			"629585",
-			"73a28c",
-			"84ad91",
-			"96b796",
-			"a7bf99",
-			"b8c59a",
-			"c8c89a",
-
-			"d7c999",
-			"e3c796",
-			"edc391",
-			"f4bc8b",
-			"f9b484",
-			"faa97c",
-			"f99d74",
-			"f4906a",
-			"ed8261",
-			"e37457",
-
-			"d6664e",
-			"c85845",
-		],
-	} */
 ];
 
-export const gradientShapePalettes = [
-	{
-		name: "Moody Earthy Hues",
-		colors: [
-			"361818",
-			"C02820",
-			"6B6165",
-			"2A4241",
-			"332933"
-		],
-	},
+export const gradientShapeColors = [
+	"DC2525",
+	"DC2525",
+	"DC2525",
+	"DC2525",
+	"DC2525",
+	"DC2525",
+	"DC2525",
+	"DC2525",
 ];
 
 export const defaultRangeValues = {

@@ -1,6 +1,20 @@
 import { useEffect, useRef } from "react";
 import { drawBlobShape } from "@/lib/utils/shape";
 import { useStore } from "@/stores/fractal-store";
+import { applyGrainEffect } from "@/lib/utils/grain-effects";
+
+/*
+ * Linked compile Shaders.
+ * 1. Create Shader Object
+ * 2. Set GLSL source
+ * 3. Compile Shader
+ * 4. Attach to Program
+ *
+ * Uniforms: global variables for shaders
+ * Uniform locations: help connect js to webgl program
+ * getAttribLocation: get location of the uniform 
+ * setUniform: send data to the uniform / setter
+ */
 
 interface BgImageProps {
 	src: string;
@@ -151,10 +165,15 @@ export const FluttedGlass = ({
 
 			if (!vertexShader || !fragmentShader) return null;
 
-			const program = gl.createProgram()!; // container holds both vertex and fragment
+			const program = gl.createProgram(); // container holds both vertex and fragment
+			if (!program) {
+				console.error("Failed to create program");
+				return null;
+			};
 			gl.attachShader(program, vertexShader);
 			gl.attachShader(program, fragmentShader);
 			gl.linkProgram(program); // join into one usable gpu program
+
 			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
 				console.error("Program link error:", gl.getProgramInfoLog(program));
 				gl.deleteProgram(program);
@@ -178,10 +197,18 @@ export const FluttedGlass = ({
 
 		// Full-screen triangle
 		const quadVerts = new Float32Array([-1, -1, 3, -1, -1, 3]);
-		const vao = gl.createVertexArray()!;
+		const vao = gl.createVertexArray();
+		if (!vao) {
+			console.error("Failed to create VAO");
+			return;
+		}
 		gl.bindVertexArray(vao);
 
-		const posBuf = gl.createBuffer()!;
+		const posBuf = gl.createBuffer();
+		if (!posBuf) {
+			console.error("Failed to create position buffer");
+			return;
+		}
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
 		gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
@@ -230,7 +257,6 @@ export const FluttedGlass = ({
 				store.backgroundGradient.forEach((palette) => {
 					palette.colors.forEach((color, index) => {
 						const stop = index / (palette.colors.length - 1);
-						console.log("stop: ", stop)
 						const hex = `#${color}`;
 						backgroundGradient.addColorStop(stop, hex);
 					});
@@ -253,13 +279,17 @@ export const FluttedGlass = ({
 			ctx.filter = filter;
 			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 
-			store.shapeGradient.forEach((palette) => {
+			store.shapeGradient.forEach((color) => {
 				drawBlobShape(ctx, {
-					x:  100,
-					y:  100,
-					palette: palette,
+					x: 0,
+					y: 0,
+					color,
 				});
 			});
+
+			if (store.grainIntensity > 0) {
+				applyGrainEffect(ctx, store.grainIntensity / 100)
+			}
 
 			// Upload gradient as WebGL texture
 			gl.texImage2D(
@@ -279,6 +309,18 @@ export const FluttedGlass = ({
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		const grainCanvas = document.createElement("canvas");
+		grainCanvas.width = RESOLUTION_WIDTH;
+		grainCanvas.height = RESOLUTION_HEIGHT;
+		const grainCtx = grainCanvas.getContext("2d");
+		if (!grainCtx) return;
+
+		grainCtx.fillStyle = "rgba(0,0,0,0)";
+		grainCtx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+
+		const grainTexture = gl.createTexture()!;
+
 
 		// refrence to shader var
 		const uniforms = {
@@ -318,9 +360,9 @@ export const FluttedGlass = ({
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.uniform1i(uniforms.u_image, 0);
 
 			// send dynamic value to shaders
+			gl.uniform1i(uniforms.u_image, 0);
 			gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 			gl.uniform1f(uniforms.u_size, sizeRef.current);
 			gl.uniform1f(uniforms.u_distortion, distortionRef.current);
@@ -333,7 +375,7 @@ export const FluttedGlass = ({
 			const screenAspect = RESOLUTION_WIDTH / RESOLUTION_HEIGHT;
 			gl.uniform1f(uniforms.u_imageAspect, screenAspect);
 
-			gl.drawArrays(gl.TRIANGLES, 0, 3);
+			gl.drawArrays(gl.TRIANGLES, 0, 3); // execute shader on gpu
 
 			gl.bindVertexArray(null);
 			gl.useProgram(null);
@@ -406,6 +448,8 @@ export const FluttedGlass = ({
 
 		store.backgroundGradient,
 		store.shapeGradient,
+
+		store.grainIntensity,
 	]);
 
 	// re-render shader when size change

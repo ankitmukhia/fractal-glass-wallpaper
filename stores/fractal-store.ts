@@ -1,10 +1,9 @@
 // have type of gradient/color you are changing state.
 // have one color state so you change that color each time you change in itration.
-//
 import { create } from "zustand";
 import {
   backgroundGradientPalettes,
-  gradientShapePalettes,
+  gradientShapeColors,
 } from "@/lib/constants";
 
 type KeyProps = "blur" | "brightness" | "contrast" | "saturation";
@@ -12,7 +11,7 @@ type KeyProps = "blur" | "brightness" | "contrast" | "saturation";
 interface StoreState {
   resolution: { width: number; height: number };
   backgroundGradient: Array<{ name: string; colors: Array<string> }>;
-  shapeGradient: Array<{ name: string; colors: Array<string> }>;
+  shapeGradient: Array<string>;
   backgroundGradientFilters: {
     blur: number;
     brightness: number;
@@ -25,6 +24,7 @@ interface StoreState {
     contrast: number;
     saturation: number;
   };
+  grainIntensity: number;
 }
 
 interface StoreActions {
@@ -33,16 +33,17 @@ interface StoreActions {
     idx: number,
     newHex: string,
   ) => void;
-  setShapeGradient: (paletteName: string, idx: number, newHex: string) => void;
+  setShapeGradient: (idx: number, newHex: string) => void;
   setBackgroundGradientFilters: (key: KeyProps, value: number) => void;
   setShapeGradientFiltersSet: (key: KeyProps, value: number) => void;
+  setGrainIntensity: (intensity: number) => void;
 }
 
 // Make color update reusable for all gradients shapes and text more if there is
 export const useStore = create<StoreState & StoreActions>((set) => ({
   resolution: { width: 1920, height: 1080 },
   backgroundGradient: backgroundGradientPalettes,
-  shapeGradient: gradientShapePalettes,
+  shapeGradient: gradientShapeColors,
   backgroundGradientFilters: {
     blur: 0,
     brightness: 100,
@@ -55,6 +56,7 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
     contrast: 100,
     saturation: 100,
   },
+  grainIntensity: 25,
   setBackgroundGradient: (paletteName: string, idx: number, newHex: string) =>
     set((state) => ({
       backgroundGradient: state.backgroundGradient.map((palette) =>
@@ -68,17 +70,10 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
           : palette,
       ),
     })),
-  setShapeGradient: (paletteName: string, idx: number, nexHex: string) =>
+  setShapeGradient: (idx: number, nexHex: string) =>
     set((state) => ({
-      shapeGradient: state.shapeGradient.map((palette) =>
-        palette.name == paletteName
-          ? {
-              ...palette,
-              colors: palette.colors.map((color, colorIdx) =>
-                colorIdx == idx ? nexHex : color,
-              ),
-            }
-          : palette,
+      shapeGradient: state.shapeGradient.map((color, colorIdx) =>
+        colorIdx === idx ? nexHex : color,
       ),
     })),
   setBackgroundGradientFilters: (key: KeyProps, value: number) =>
@@ -94,5 +89,9 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
         ...state.shapeGradientFilters,
         [key]: value,
       },
+    })),
+  setGrainIntensity: (intensity: number) =>
+    set(() => ({
+      grainIntensity: intensity,
     })),
 }));

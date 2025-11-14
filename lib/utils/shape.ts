@@ -6,45 +6,32 @@ export function drawBlobShape(
   position: {
     x: number;
     y: number;
-    palette: { colors: Array<string> };
+    color: string;
   },
 ) {
   const { width, height } = ctx.canvas;
-  const numBlobs = Math.floor(Math.random() * 5) + 1; // 1–5 blobs
-  const blobs: { x: number; y: number; radius: number }[] = [];
+  const numBlobs = 1; // Only 1 blob per color
+  const blobs: {
+    x: number;
+    y: number;
+    radius: number;
+    stretchY: number;
+    rotation: number;
+  }[] = [];
 
-  // Helper: prevent overlapping
-  function overlaps(x: number, y: number, r: number) {
-    return blobs.some((b) => {
-      const dx = x - b.x;
-      const dy = y - b.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      return dist < r + b.radius + 30; // 30px buffer to keep them apart
-    });
-  }
+  // --- Generate 1 blob (no overlap logic needed if only 1 blob per draw) ---
+  const baseRadius = 100 + Math.random() * 120;
+  const stretchY = 1.8 + Math.random() * 1.2;
+  const rotation = ((Math.random() - 0.5) * 80 * Math.PI) / 180;
 
-  // Generate blobs (largest first)
-  let tries = 0;
-  while (blobs.length < numBlobs && tries < 1500) {
-    tries++;
-    const baseRadius = 100 + Math.random() * 120;
-    const largestBoost = blobs.length === 0 ? 2.3 : 1; // biggest one larger
-    const radius = baseRadius * largestBoost;
+  const safeMarginX = baseRadius * 2;
+  const safeMarginY = baseRadius * stretchY * 2;
+  const x = safeMarginX + Math.random() * (width - safeMarginX * 2);
+  const y = safeMarginY + Math.random() * (height - safeMarginY * 2);
 
-    const safeMargin = radius + 20;
-    const x = safeMargin + Math.random() * (width - safeMargin * 2);
-    const y = safeMargin + Math.random() * (height - safeMargin * 2);
+  blobs.push({ x, y, radius: baseRadius, stretchY, rotation });
 
-    if (!overlaps(x, y, radius)) {
-      blobs.push({ x, y, radius });
-    }
-  }
-
-  // Gradient
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  position.palette.colors.forEach((hex, i) =>
-    gradient.addColorStop(i / (position.palette.colors.length - 1), `#${hex}`),
-  );
+  // --- Apply store filters ---
 
   const filters = useStore.getState().shapeGradientFilters;
   ctx.filter = [
@@ -53,49 +40,50 @@ export function drawBlobShape(
     `contrast(${filters.contrast}%)`,
     `saturate(${filters.saturation}%)`,
   ].join(" ");
-  ctx.fillStyle = gradient;
 
-  // --- Draw each blob ---
+  // --- Draw blob with a single solid color ---
   blobs.forEach((blob) => {
-    const path = new Path2D();
+    ctx.save();
+    ctx.translate(blob.x, blob.y);
 
+    ctx.rotate(blob.rotation);
+
+    const path = new Path2D();
     const points: { x: number; y: number }[] = [];
-    const numPoints = 10 + Math.floor(Math.random() * 6); // 10–15 control points
+    const numPoints = 12 + Math.floor(Math.random() * 4);
     const angleStep = (Math.PI * 2) / numPoints;
 
-    // create random circular points
     for (let i = 0; i < numPoints; i++) {
       const angle = i * angleStep;
-      const radiusJitter = blob.radius * (0.7 + Math.random() * 0.6); // smooth but random radius
-      points.push({
-        x: blob.x + Math.cos(angle) * radiusJitter,
-        y: blob.y + Math.sin(angle) * radiusJitter,
-      });
+      const radiusJitter = blob.radius * (0.7 + Math.random() * 0.6);
+      const px = Math.cos(angle) * radiusJitter;
+      const py = Math.sin(angle) * radiusJitter * blob.stretchY;
+      points.push({ x: px, y: py });
     }
 
-    // --- Use smooth Bézier curve between points ---
     for (let i = 0; i < points.length; i++) {
       const p0 = points[(i - 1 + points.length) % points.length];
       const p1 = points[i];
-
       const p2 = points[(i + 1) % points.length];
-
       const p3 = points[(i + 2) % points.length];
 
       if (i === 0) path.moveTo(p1.x, p1.y);
 
-      // Catmull–Rom to Bézier conversion for smoothness
-
       const cp1x = p1.x + (p2.x - p0.x) / 6;
       const cp1y = p1.y + (p2.y - p0.y) / 6;
       const cp2x = p2.x - (p3.x - p1.x) / 6;
+
       const cp2y = p2.y - (p3.y - p1.y) / 6;
 
       path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
-
     path.closePath();
+
+    ctx.fillStyle = `#${position.color}`;
+
     ctx.fill(path);
+
+    ctx.restore();
   });
 
   ctx.filter = "none";
