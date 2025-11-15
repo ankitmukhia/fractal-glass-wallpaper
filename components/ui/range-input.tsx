@@ -38,7 +38,7 @@ export const RangeInput = ({
 					}}
 				/>
 				<div
-					className="absolute inset-0 flex bg-neutral-700/60 rounded-[10px] pointer-events-none"
+					className="absolute inset-0 flex bg-input/50 rounded-[10px] pointer-events-none"
 					style={{ width: `${percentage}%` }}
 				></div>
 

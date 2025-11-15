@@ -79,11 +79,11 @@
 }
 
 .slider::-webkit-slider-thumb {
-  @apply appearance-none bg-neutral-600 h-4 w-[3px] rounded-full;
+  @apply appearance-none bg-foreground/20 h-4 w-[3px] rounded-full;
 }
 
 .group:hover .slider::-webkit-slider-thumb {
-  @apply bg-neutral-300;
+  @apply bg-foreground/30;
 }
 
 .dark {

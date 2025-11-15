@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState, useRef } from "react";
 import { FluttedGlass } from "@/components/flutted-glass";
-import { defaultRangeValues } from "@/lib/constants";
+import { defaultRangeValues, exampleImages } from "@/lib/constants";
 import {
 	PlusIcon,
 	ChevronDownIcon,
@@ -12,7 +13,8 @@ import {
 	PaintBucketIcon,
 	PaletteIcon,
 	BoxIcon,
-	PaintbrushVerticalIcon
+	PaintbrushVerticalIcon,
+	XIcon
 } from "lucide-react";
 import { RangeInput } from "@/components/ui/range-input";
 import { useStore } from "@/stores/fractal-store";
@@ -27,6 +29,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover"
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -46,7 +49,8 @@ export const Desktop = () => {
 		if (file) {
 			const render = new FileReader();
 			render.onloadend = () => {
-				store.setBackgroundImage({ src: render.result as string, withImage: true })
+				store.setWithImage(true);
+				store.setBackgroundImage({ src: render.result as string });
 			}
 			render.readAsDataURL(file)
 		}
@@ -95,11 +99,12 @@ export const Desktop = () => {
 			y: prev.y + delta.y,
 		}));
 	};
+
 	return (
 		<div className="flex items-center justify-center h-dvh">
 			<div className="flex justify-between h-full w-full p-4">
 				{/* Left side bar */}
-				<div className="max-w-[300px] bg-sidebar border-1 rounded-3xl">
+				<div className="min-w-80 max-w-96 bg-sidebar border-1 rounded-3xl">
 					<div className="flex flex-col w-full h-full">
 						<div className="p-4">
 							<Tabs defaultValue="gradient" className="w-full">
@@ -268,23 +273,48 @@ export const Desktop = () => {
 								</TabsContent>
 
 								<TabsContent value="image">
-									<div
-										className="relative flex items-center gap-2 border rounded-xl p-2 cursor-pointer"
-										onClick={() => {
-											if (imageInputRef.current) {
-												imageInputRef.current.click();
-											}
-										}}
-									>
-										<UploadIcon className="size-4 text-neutral-400" />
-										<Input
-											ref={imageInputRef}
-											onChange={handleImageSelect}
-											accept="image/*"
-											type="file"
-											className="hidden"
-										/>
-										<p className="font-semibold text-neutral-400">Upload Image</p>
+									<div className="space-y-2">
+										<div
+											className="relative flex items-center justify-center gap-3 border-2 border-dashed hover:border-foreground/50 rounded-md p-3 cursor-pointer"
+											onClick={() => {
+												if (imageInputRef.current) {
+													imageInputRef.current.click();
+												}
+											}}
+										>
+											<UploadIcon className="size-4 text-neutral-400" />
+											<Input
+												ref={imageInputRef}
+												onChange={handleImageSelect}
+												accept="image/*"
+												type="file"
+												className="hidden"
+											/>
+											<p className="font-semibold text-neutral-400">Upload Image</p>
+										</div>
+
+										<div className="grid grid-cols-2 gap-2">
+											{exampleImages.map((value, index) => (
+												<div
+													key={value.alt}
+													className={cn(`relative aspect-video rounded-lg`, {
+														"border border-foreground/80": index === store.backgroundImage.currentIndex
+													})}
+													onClick={() => {
+														store.setWithImage(true);
+														store.setBackgroundImage({ src: value.src, currentIndex: index });
+													}}
+												>
+													<Image
+														alt={value.alt}
+														src={value.src}
+														sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+														fill
+														className="rounded-md border border-border/10 hover:border-border cursor-pointer object-cover"
+													/>
+												</div>
+											))}
+										</div>
 									</div>
 								</TabsContent>
 
@@ -306,7 +336,7 @@ export const Desktop = () => {
 					</div>
 				</div>
 
-				<div className="fixed top-4 left-1/2 -translate-x-1/2 z-10 border border-neutral-200/60 bg-white rounded-3xl p-2">
+				<div className="fixed top-4 left-1/2 -translate-x-1/2 z-10 border bg-accent rounded-3xl p-2">
 					<div className="flex gap-4">
 						<div>
 							<DropdownMenu>
@@ -391,7 +421,7 @@ export const Desktop = () => {
 				</DndContext>
 
 				{/* Right side bar */}
-				<div className="min-w-[300px] bg-sidebar border rounded-3xl">
+				<div className="min-w-80 max-w-96 bg-sidebar border rounded-3xl">
 					<div className="flex flex-col w-full h-full">
 						<div className="space-y-4 p-4">
 							<div className="flex items-center justify-between">
@@ -413,55 +443,66 @@ export const Desktop = () => {
 									</TabsTrigger>
 								</TabsList>
 
-								<TabsContent value="gradient">
-									{store.backgroundGradient.map((palette, paletteIdx) => (
-										<div key={paletteIdx} className="flex flex-col gap-2">
-											{palette.colors.map((hex, index) => (
-												<Popover key={index}>
-													<div className="flex items-center px-1 border rounded-xl h-11">
-														<PopoverTrigger asChild>
-															<div className="flex items-center gap-2 font-semibold text-neutral-400">
-																<Button
-																	className="h-9 w-9 rounded-lg"
-																	style={{ backgroundColor: `#${hex}` }}
-																/>
-																<div>
-																	<span className="text-sm tracking-wide">{"#" + hex}</span>
+								<div className="space-y-2 pt-4">
+									<TabsContent value="gradient">
+										{store.backgroundGradient.map((palette, paletteIdx) => (
+											<div key={paletteIdx} className="flex flex-col gap-3">
+												{palette.colors.map((hex, index) => (
+													<Popover key={index}>
+														<div className="flex items-center px-2 py-1 border bg-muted rounded-md h-9">
+															<PopoverTrigger asChild>
+																<div className="flex items-center justify-between w-full font-semibold text-neutral-400">
+																	<div className="flex items-center gap-3">
+																		<Button
+																			className="h-5 px-3 rounded-none border border-input"
+																			style={{ backgroundColor: `#${hex}` }}
+																		/>
+																		<span className="tracking-wide lowercase">{"#" + hex}</span>
+																	</div>
+																	<div>
+																		<XIcon className="size-4" />
+																	</div>
 																</div>
+															</PopoverTrigger>
+
+															<PopoverContent className="w-auto p-2">
+																<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
+															</PopoverContent>
+														</div>
+													</Popover>
+												))}
+											</div>
+										))}
+									</TabsContent>
+
+									<TabsContent value="solid">
+										<Popover>
+											<div className="flex ittems-center px-2 py-1 border rounded-md bg-muted h-9">
+												<PopoverTrigger asChild>
+													<div className="flex items-center justify-between w-full font-semibold text-neutral-400">
+														<div className="flex items-center gap-3">
+															<Button
+																className="h-5 px-3 rounded-none border border-input"
+																style={{ backgroundColor: `#${store.backgroundSolid}` }}
+															/>
+															<div>
+																<span className="text-sm tracking-wide">{"#" + store.backgroundSolid}</span>
 															</div>
-														</PopoverTrigger>
+														</div>
 
-														<PopoverContent className="w-auto p-2">
-															<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
-														</PopoverContent>
+														<div>
+															<XIcon className="size-4" />
+														</div>
 													</div>
-												</Popover>
-											))}
-										</div>
-									))}
-								</TabsContent>
+												</PopoverTrigger>
 
-								<TabsContent value="solid">
-									<Popover>
-										<div className="flex ittems-center px-1 border rounded-xl h-11">
-											<PopoverTrigger asChild>
-												<div className="flex items-center gap-2 font-semibold text-neutral-400">
-													<Button
-														className="h-9 w-9 rounded-lg"
-														style={{ backgroundColor: `#${store.backgroundSolid}` }}
-													/>
-													<div>
-														<span className="text-sm tracking-wide">{"#" + store.backgroundSolid}</span>
-													</div>
-												</div>
-											</PopoverTrigger>
-
-											<PopoverContent className="w-auto p-2">
-												<HexColorPicker color={store.backgroundSolid} onChange={(newHex) => store.setSolidBackground(newHex.slice(1))} />
-											</PopoverContent>
-										</div>
-									</Popover>
-								</TabsContent>
+												<PopoverContent className="w-auto p-2">
+													<HexColorPicker color={store.backgroundSolid} onChange={(newHex) => store.setSolidBackground(newHex.slice(1))} />
+												</PopoverContent>
+											</div>
+										</Popover>
+									</TabsContent>
+								</div>
 							</Tabs>
 						</div>
 
@@ -475,18 +516,23 @@ export const Desktop = () => {
 								<PlusIcon className="size-4" />
 							</div>
 
-							<div className="flex flex-col gap-2">
+							<div className="flex flex-col gap-3">
 								{store.shapeGradient.map((color, idx) => (
 									<div key={idx} className="flex flex-col gap-2">
 										<Popover>
-											<div className="flex items-center px-1 border rounded-xl h-11">
+											<div className="flex items-center border rounded-md bg-muted px-2 py-1 h-9">
 												<PopoverTrigger asChild>
-													<div className="flex items-center gap-2 font-semibold text-neutral-400">
-														<Button
-															className="h-9 w-9 rounded-lg"
-															style={{ backgroundColor: `#${color}` }}
-														/>
-														<span className="text-sm tracking-wide">{"#" + color}</span>
+													<div className="flex items-center justify-between w-full font-semibold text-neutral-400">
+														<div className="flex items-center gap-3">
+															<Button
+																className="h-5 px-3 rounded-none border border-input"
+																style={{ backgroundColor: `#${color}` }}
+															/>
+															<span className="tracking-wide lowercase">{"#" + color}</span>
+														</div>
+														<div>
+															<XIcon className="size-4" />
+														</div>
 													</div>
 												</PopoverTrigger>
 

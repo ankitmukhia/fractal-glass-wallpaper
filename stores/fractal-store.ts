@@ -14,9 +14,10 @@ interface StoreState {
   fractalShadow: number;
   isGradient: boolean;
   resolution: { width: number; height: number };
+  withImage: boolean;
   backgroundImage: {
     src: string;
-    withImage: boolean;
+    currentIndex?: number | undefined;
   };
   backgroundSolid: string;
   backgroundGradient: Array<{ name: string; colors: Array<string> }>;
@@ -41,12 +42,13 @@ interface StoreActions {
   setDistortion: (dist: number) => void;
   setFractalMargin: (margin: number) => void;
   setFractalShadow: (shadow: number) => void;
+  setWithImage: (img: boolean) => void;
   setBackgroundImage: ({
     src,
-    withImage,
+    currentIndex,
   }: {
     src: string;
-    withImage: boolean;
+    currentIndex?: number | undefined;
   }) => void;
   setIsGradient: (isGradient: boolean) => void;
   setSolidBackground: (newHex: string) => void;
@@ -67,9 +69,10 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
   fractalMargin: 0.0,
   fractalShadow: 0.1,
   resolution: { width: 1920, height: 1080 },
+  withImage: false,
   backgroundImage: {
     src: "",
-    withImage: false,
+    currentIndex: undefined,
   },
   isGradient: true,
   backgroundGradient: backgroundGradientPalettes,
@@ -88,6 +91,10 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
     saturation: 100,
   },
   grainIntensity: 25,
+  setWithImage: (img) =>
+    set(() => ({
+      withImage: img,
+    })),
   setIsGradient: (isGradient) => set(() => ({ isGradient })),
   setBackgroundGradient: (paletteName, idx, newHex) =>
     set((state) => ({
@@ -142,11 +149,11 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
     set(() => ({
       fractalShadow: shadow,
     })),
-  setBackgroundImage: ({ src, withImage }) =>
+  setBackgroundImage: ({ src, currentIndex }) =>
     set(() => ({
       backgroundImage: {
         src,
-        withImage,
+        currentIndex,
       },
     })),
   setSolidBackground: (newHex) =>

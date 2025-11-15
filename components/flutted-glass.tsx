@@ -219,7 +219,7 @@ export const FluttedGlass = () => {
 		texRef.current = texture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 
-		if (store.backgroundImage.withImage) {
+		if (store.withImage) {
 			// placeholder texture before image loads
 			gl.texImage2D(
 				gl.TEXTURE_2D,
@@ -264,7 +264,7 @@ export const FluttedGlass = () => {
 
 			// Work on direction of blur
 			const filter = [
-				`blur(${store.backgroundGradientFilters.blur / 4}px) `,
+				`blur(${store.backgroundGradientFilters.blur}px) `,
 				`brightness(${store.backgroundGradientFilters.brightness}%) `,
 				`contrast(${store.backgroundGradientFilters.contrast}%)`,
 				`saturate(${store.backgroundGradientFilters.saturation}%)`
@@ -334,7 +334,7 @@ export const FluttedGlass = () => {
 			grainCanvas,
 		);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);;
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.bindTexture(gl.TEXTURE_2D, null);
@@ -410,7 +410,7 @@ export const FluttedGlass = () => {
 		renderRef.current = render;
 
 		// Load image only if withImage = true
-		if (store.backgroundImage.withImage) {
+		if (store.withImage) {
 			const img = new Image();
 			img.crossOrigin = "anonymous";
 			img.src = store.backgroundImage.src;
@@ -483,7 +483,7 @@ export const FluttedGlass = () => {
 		store.backgroundSolid,
 		store.isGradient,
 		store.backgroundImage.src,
-		store.backgroundImage.withImage,
+		store.withImage,
 	]);
 
 	// re-render shader when size change
@@ -501,7 +501,7 @@ export const FluttedGlass = () => {
 			gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
 			render();
 		}
-	});
+	}, []);
 
 	return (
 		<canvas
