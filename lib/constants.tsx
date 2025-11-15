@@ -1,4 +1,6 @@
 // multiple gradient palettes can pick randomness
+export const solidBackgroundColor = "090909";
+
 export const backgroundGradientPalettes = [
 	{
 		name: "Serene Nautral Tones",
@@ -10,10 +12,6 @@ export const backgroundGradientPalettes = [
 ];
 
 export const gradientShapeColors = [
-	"DC2525",
-	"DC2525",
-	"DC2525",
-	"DC2525",
 	"DC2525",
 	"DC2525",
 	"DC2525",

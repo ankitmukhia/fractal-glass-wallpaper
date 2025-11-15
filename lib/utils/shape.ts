@@ -10,7 +10,6 @@ export function drawBlobShape(
   },
 ) {
   const { width, height } = ctx.canvas;
-  const numBlobs = 1; // Only 1 blob per color
   const blobs: {
     x: number;
     y: number;

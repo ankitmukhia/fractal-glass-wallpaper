@@ -4,7 +4,7 @@ export function applyGrainEffect(
   ctx: CanvasRenderingContext2D,
   intensity: number = 0.15,
 ) {
-  const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+  const imageData = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
 
   const data = imageData.data;
   const noise2D = createNoise2D();

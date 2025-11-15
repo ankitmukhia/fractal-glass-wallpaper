@@ -1,15 +1,24 @@
-// have type of gradient/color you are changing state.
-// have one color state so you change that color each time you change in itration.
 import { create } from "zustand";
 import {
   backgroundGradientPalettes,
   gradientShapeColors,
+  solidBackgroundColor,
 } from "@/lib/constants";
 
 type KeyProps = "blur" | "brightness" | "contrast" | "saturation";
 
 interface StoreState {
+  fractalSize: number;
+  distortion: number;
+  fractalMargin: number;
+  fractalShadow: number;
+  isGradient: boolean;
   resolution: { width: number; height: number };
+  backgroundImage: {
+    src: string;
+    withImage: boolean;
+  };
+  backgroundSolid: string;
   backgroundGradient: Array<{ name: string; colors: Array<string> }>;
   shapeGradient: Array<string>;
   backgroundGradientFilters: {
@@ -28,6 +37,19 @@ interface StoreState {
 }
 
 interface StoreActions {
+  setFractalSize: (size: number) => void;
+  setDistortion: (dist: number) => void;
+  setFractalMargin: (margin: number) => void;
+  setFractalShadow: (shadow: number) => void;
+  setBackgroundImage: ({
+    src,
+    withImage,
+  }: {
+    src: string;
+    withImage: boolean;
+  }) => void;
+  setIsGradient: (isGradient: boolean) => void;
+  setSolidBackground: (newHex: string) => void;
   setBackgroundGradient: (
     paletteName: string,
     idx: number,
@@ -39,10 +61,19 @@ interface StoreActions {
   setGrainIntensity: (intensity: number) => void;
 }
 
-// Make color update reusable for all gradients shapes and text more if there is
 export const useStore = create<StoreState & StoreActions>((set) => ({
+  fractalSize: 0.29,
+  distortion: 0.5,
+  fractalMargin: 0.0,
+  fractalShadow: 0.1,
   resolution: { width: 1920, height: 1080 },
+  backgroundImage: {
+    src: "",
+    withImage: false,
+  },
+  isGradient: true,
   backgroundGradient: backgroundGradientPalettes,
+  backgroundSolid: solidBackgroundColor,
   shapeGradient: gradientShapeColors,
   backgroundGradientFilters: {
     blur: 0,
@@ -57,7 +88,8 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
     saturation: 100,
   },
   grainIntensity: 25,
-  setBackgroundGradient: (paletteName: string, idx: number, newHex: string) =>
+  setIsGradient: (isGradient) => set(() => ({ isGradient })),
+  setBackgroundGradient: (paletteName, idx, newHex) =>
     set((state) => ({
       backgroundGradient: state.backgroundGradient.map((palette) =>
         palette.name === paletteName
@@ -70,28 +102,55 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
           : palette,
       ),
     })),
-  setShapeGradient: (idx: number, nexHex: string) =>
+  setShapeGradient: (idx, nexHex) =>
     set((state) => ({
       shapeGradient: state.shapeGradient.map((color, colorIdx) =>
         colorIdx === idx ? nexHex : color,
       ),
     })),
-  setBackgroundGradientFilters: (key: KeyProps, value: number) =>
+  setBackgroundGradientFilters: (key, value) =>
     set((state) => ({
       backgroundGradientFilters: {
         ...state.backgroundGradientFilters,
         [key]: value,
       },
     })),
-  setShapeGradientFiltersSet: (key: KeyProps, value: number) =>
+  setShapeGradientFiltersSet: (key, value) =>
     set((state) => ({
       shapeGradientFilters: {
         ...state.shapeGradientFilters,
         [key]: value,
       },
     })),
-  setGrainIntensity: (intensity: number) =>
+  setGrainIntensity: (intensity) =>
     set(() => ({
       grainIntensity: intensity,
+    })),
+  setFractalSize: (size) =>
+    set(() => ({
+      fractalSize: size,
+    })),
+  setDistortion: (dist) =>
+    set(() => ({
+      distortion: dist,
+    })),
+  setFractalMargin: (margin) =>
+    set(() => ({
+      fractalMargin: margin,
+    })),
+  setFractalShadow: (shadow) =>
+    set(() => ({
+      fractalShadow: shadow,
+    })),
+  setBackgroundImage: ({ src, withImage }) =>
+    set(() => ({
+      backgroundImage: {
+        src,
+        withImage,
+      },
+    })),
+  setSolidBackground: (newHex) =>
+    set(() => ({
+      backgroundSolid: newHex,
     })),
 }));

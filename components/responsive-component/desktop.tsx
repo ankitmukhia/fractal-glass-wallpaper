@@ -8,6 +8,11 @@ import {
 	PlusIcon,
 	ChevronDownIcon,
 	UploadIcon,
+	ImageIcon,
+	PaintBucketIcon,
+	PaletteIcon,
+	BoxIcon,
+	PaintbrushVerticalIcon
 } from "lucide-react";
 import { RangeInput } from "@/components/ui/range-input";
 import { useStore } from "@/stores/fractal-store";
@@ -33,32 +38,15 @@ const Movable = dynamic(() => import("@/components/movable"), { ssr: false });
 export const Desktop = () => {
 	const store = useStore();
 	const imageInputRef = useRef<HTMLInputElement>(null);
-	const [bgImage, setBgImage] = useState({ src: "", withImage: false });
 	const [position, setPosition] = useState({ x: 0, y: 0 });
-
-	const [size, setSize] = useState<number>(0.29);
 	const [zoom, setZoom] = useState(0.4);
-	const sizeRef = useRef<number>(size);
-	sizeRef.current = size;
-
-	const [distrotion, setDistrotion] = useState(0.5);
-	const distortionRef = useRef<number>(distrotion);
-	distortionRef.current = distrotion;
-
-	const [fractalMargin, setFractalMargin] = useState(0.0);
-	const fractalMarginRef = useRef<number>(fractalMargin);
-	fractalMarginRef.current = fractalMargin;
-
-	const [fractalShadow, setFractalShadow] = useState(0.10);
-	const fractalShadowRef = useRef<number>(fractalShadow);
-	fractalShadowRef.current = fractalShadow;
 
 	function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (file) {
 			const render = new FileReader();
 			render.onloadend = () => {
-				setBgImage({ src: render.result as string, withImage: true })
+				store.setBackgroundImage({ src: render.result as string, withImage: true })
 			}
 			render.readAsDataURL(file)
 		}
@@ -66,26 +54,22 @@ export const Desktop = () => {
 
 	function handleSizeChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const v = parseFloat(e.target.value);
-		setSize(v);
-		sizeRef.current = v;
+		store.setFractalSize(v);
 	}
 
 	function handleDistrotionChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const v = parseFloat(e.target.value);
-		setDistrotion(v);
-		distortionRef.current = v;
+		store.setDistortion(v);
 	}
 
 	function handleFractalMarginChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const v = parseFloat(e.target.value);
-		setFractalMargin(v);
-		fractalMarginRef.current = v;
+		store.setFractalMargin(v);
 	}
 
 	function handleFractalShadowChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const v = parseFloat(e.target.value);
-		setFractalShadow(v);
-		fractalShadowRef.current = v;
+		store.setFractalShadow(v);
 	}
 
 	function handleBgGradientFilterChange(e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof store.backgroundGradientFilters) {
@@ -115,184 +99,199 @@ export const Desktop = () => {
 		<div className="flex items-center justify-center h-dvh">
 			<div className="flex justify-between h-full w-full p-4">
 				{/* Left side bar */}
-
-				<div className="max-w-[300px] bg-white border-2 border-neutral-200/60 rounded-3xl">
+				<div className="max-w-[300px] bg-sidebar border-1 rounded-3xl">
 					<div className="flex flex-col w-full h-full">
 						<div className="p-4">
-							<div
-								className="relative flex items-center gap-2 border border-neutral-100 rounded-xl p-2 cursor-pointer"
-								onClick={() => {
-									if (imageInputRef.current) {
-										imageInputRef.current.click();
-									}
-								}}
-							>
-								<UploadIcon className="size-4 text-neutral-400" />
-								<Input
-									ref={imageInputRef}
-									onChange={handleImageSelect}
-									accept="image/*"
-									type="file"
-									className="hidden"
-								/>
-								<p className="font-semibold text-neutral-400">Upload Image</p>
-							</div>
+							<Tabs defaultValue="gradient" className="w-full">
+								<TabsList className="w-full">
+									<TabsTrigger value="gradient">
+										<PaletteIcon />
+										Gradient
+									</TabsTrigger>
+									<TabsTrigger value="image">
+										<ImageIcon />
+										Image
+									</TabsTrigger>
+								</TabsList>
+
+								<TabsContent value="gradient">
+									<div className="space-y-2 pt-4">
+										<RangeInput
+											label="Size"
+											min={defaultRangeValues.size.min}
+											max={defaultRangeValues.size.max}
+											step={defaultRangeValues.size.step}
+											value={store.fractalSize}
+											onChange={handleSizeChange}
+										/>
+
+										<RangeInput
+											label="Distrotion"
+											min={defaultRangeValues.distrotion.min}
+											max={defaultRangeValues.distrotion.max}
+											step={defaultRangeValues.distrotion.step}
+											value={store.distortion}
+											onChange={handleDistrotionChange}
+										/>
+
+										<RangeInput
+											label="Shadow"
+											min={defaultRangeValues.shadow.min}
+											max={defaultRangeValues.shadow.max}
+											step={defaultRangeValues.shadow.step}
+											value={store.fractalShadow}
+											onChange={handleFractalShadowChange}
+										/>
+
+										{/* It controls that bg edge strtching */}
+										<RangeInput
+											label="Stretch"
+											min={0}
+											max={100}
+											step={2}
+											value={60}
+											onChange={() => { }}
+										/>
+
+										<RangeInput
+											label="Blur"
+											min={0}
+											max={100}
+											step={2}
+											value={20}
+											onChange={() => { }}
+										/>
+
+										<RangeInput
+											label="Margin"
+											min={defaultRangeValues.fractalMargin.min}
+											max={defaultRangeValues.fractalMargin.max}
+											step={defaultRangeValues.fractalMargin.step}
+											value={store.fractalMargin}
+											onChange={handleFractalMarginChange}
+										/>
+
+										<Tabs defaultValue="background" className="w-full">
+											<div className="py-4">
+												<TabsList className="w-full">
+													<TabsTrigger value="background">
+														<PaintBucketIcon />
+														Background
+													</TabsTrigger>
+													<TabsTrigger value="shape">
+														<BoxIcon />
+														Shape
+													</TabsTrigger>
+												</TabsList>
+											</div>
+
+											<TabsContent value="background">
+												<div className="flex flex-col gap-2">
+													<RangeInput
+														label="Blur"
+														min={0}
+														max={1200}
+														step={1}
+														value={store.backgroundGradientFilters.blur}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "blur")}
+													/>
+
+													<RangeInput
+														label="Saturation"
+														min={0}
+														max={200}
+														step={1}
+														value={store.backgroundGradientFilters.saturation}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "saturation")}
+													/>
+
+													<RangeInput
+														label="Contrast"
+														min={0}
+														max={200}
+														step={1}
+														value={store.backgroundGradientFilters.contrast}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "contrast")}
+													/>
+
+													<RangeInput
+														label="Brightness"
+														min={0}
+														max={200}
+														step={2}
+														value={store.backgroundGradientFilters.brightness}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "brightness")}
+													/>
+												</div>
+											</TabsContent>
+
+											<TabsContent value="shape">
+												<div className="flex flex-col gap-2">
+													<RangeInput
+														label="Blur"
+														min={0}
+														max={100}
+														step={1}
+														value={store.shapeGradientFilters.blur}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "blur")}
+													/>
+													<RangeInput
+														label="Saturation"
+														min={0}
+														max={200}
+														step={1}
+														value={store.shapeGradientFilters.saturation}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "saturation")}
+													/>
+
+													<RangeInput
+														label="Contrast"
+														min={0}
+														max={200}
+														step={1}
+														value={store.shapeGradientFilters.contrast}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "contrast")}
+													/>
+
+													<RangeInput
+														label="Brightness"
+														min={0}
+														max={200}
+														step={2}
+														value={store.shapeGradientFilters.brightness}
+														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "brightness")}
+													/>
+												</div>
+											</TabsContent>
+										</Tabs>
+									</div>
+								</TabsContent>
+
+								<TabsContent value="image">
+									<div
+										className="relative flex items-center gap-2 border rounded-xl p-2 cursor-pointer"
+										onClick={() => {
+											if (imageInputRef.current) {
+												imageInputRef.current.click();
+											}
+										}}
+									>
+										<UploadIcon className="size-4 text-neutral-400" />
+										<Input
+											ref={imageInputRef}
+											onChange={handleImageSelect}
+											accept="image/*"
+											type="file"
+											className="hidden"
+										/>
+										<p className="font-semibold text-neutral-400">Upload Image</p>
+									</div>
+								</TabsContent>
+
+							</Tabs>
 						</div>
 
-						<Separator className="bg-neutral-100" />
-
-						<div className="space-y-2 p-4">
-							<RangeInput
-								label="Size"
-								min={defaultRangeValues.size.min}
-								max={defaultRangeValues.size.max}
-								step={defaultRangeValues.size.step}
-								size={size}
-								onChange={handleSizeChange}
-							/>
-
-							<RangeInput
-								label="Distrotion"
-								min={defaultRangeValues.distrotion.min}
-								max={defaultRangeValues.distrotion.max}
-								step={defaultRangeValues.distrotion.step}
-								size={distrotion}
-								onChange={handleDistrotionChange}
-							/>
-
-							<RangeInput
-								label="Shadow"
-								min={defaultRangeValues.shadow.min}
-								max={defaultRangeValues.shadow.max}
-								step={defaultRangeValues.shadow.step}
-								size={fractalShadow}
-								onChange={handleFractalShadowChange}
-							/>
-
-							{/* It controls that bg edge strtching */}
-							<RangeInput
-								label="Stretch"
-								min={0}
-								max={100}
-								step={2}
-								size={60}
-								onChange={() => { }}
-							/>
-
-							<RangeInput
-								label="Blur"
-								min={0}
-								max={100}
-								step={2}
-								size={20}
-								onChange={() => { }}
-							/>
-
-							<RangeInput
-								label="Margin"
-								min={defaultRangeValues.fractalMargin.min}
-								max={defaultRangeValues.fractalMargin.max}
-								step={defaultRangeValues.fractalMargin.step}
-								size={fractalMargin}
-								onChange={handleFractalMarginChange}
-							/>
-						</div>
-
-						<Separator className="bg-neutral-100" />
-
-						<Tabs defaultValue="background" className="w-full p-4">
-							<TabsList className="w-full h-10">
-								<TabsTrigger value="background">
-									Background
-								</TabsTrigger>
-								<TabsTrigger value="shape">
-									Shape
-								</TabsTrigger>
-							</TabsList>
-
-							<Separator className="bg-neutral-100" />
-
-							<TabsContent value="background">
-								<div className="flex flex-col gap-2">
-									<RangeInput
-										label="Blur"
-										min={0}
-										max={100}
-										step={1}
-										size={store.backgroundGradientFilters.blur}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "blur")}
-									/>
-
-									<RangeInput
-										label="Saturation"
-										min={0}
-										max={200}
-										step={1}
-										size={store.backgroundGradientFilters.saturation}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "saturation")}
-									/>
-
-									<RangeInput
-										label="Contrast"
-										min={0}
-										max={200}
-										step={1}
-										size={store.backgroundGradientFilters.contrast}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "contrast")}
-									/>
-
-									<RangeInput
-										label="Brightness"
-										min={0}
-										max={200}
-										step={2}
-										size={store.backgroundGradientFilters.brightness}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "brightness")}
-									/>
-								</div>
-							</TabsContent>
-
-							<TabsContent value="shape">
-								<div className="flex flex-col gap-2">
-									<RangeInput
-										label="Blur"
-										min={0}
-										max={100}
-										step={1}
-										size={store.shapeGradientFilters.blur}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "blur")}
-									/>
-									<RangeInput
-										label="Saturation"
-										min={0}
-										max={200}
-										step={1}
-										size={store.shapeGradientFilters.saturation}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "saturation")}
-									/>
-
-									<RangeInput
-										label="Contrast"
-										min={0}
-										max={200}
-										step={1}
-										size={store.shapeGradientFilters.contrast}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "contrast")}
-									/>
-
-									<RangeInput
-										label="Brightness"
-										min={0}
-										max={200}
-										step={2}
-										size={store.shapeGradientFilters.brightness}
-										onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "brightness")}
-									/>
-								</div>
-							</TabsContent>
-						</Tabs>
-
-						<Separator className="bg-neutral-100" />
+						<Separator />
 
 						<div className="space-y-2 p-4">
 							<RangeInput
@@ -300,7 +299,7 @@ export const Desktop = () => {
 								min={0}
 								max={100}
 								step={1}
-								size={store.grainIntensity}
+								value={store.grainIntensity}
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleGrainIntensityChange(e)}
 							/>
 						</div>
@@ -384,17 +383,7 @@ export const Desktop = () => {
 										transformOrigin: "top left",
 									}}
 								>
-									<FluttedGlass
-										size={size}
-										sizeRef={sizeRef}
-										distortion={distrotion}
-										distortionRef={distortionRef}
-										fractalMargin={fractalMargin}
-										fractalMarginRef={fractalMarginRef}
-										fractalShadow={fractalShadow}
-										fractalShadowRef={fractalShadowRef}
-										bgImage={bgImage}
-									/>
+									<FluttedGlass />
 								</div>
 							</div>
 						</Movable>
@@ -402,77 +391,116 @@ export const Desktop = () => {
 				</DndContext>
 
 				{/* Right side bar */}
-				<div className="min-w-[300px] bg-white border-2 border-neutral-200/60 rounded-3xl">
-					<div className="p-4 space-y-4">
-						<div className="flex items-center justify-between">
-							<h1 className="text-sm font-semibold tracking-wide">
-								Background
-							</h1>
-							<PlusIcon className="size-4" />
-						</div>
+				<div className="min-w-[300px] bg-sidebar border rounded-3xl">
+					<div className="flex flex-col w-full h-full">
+						<div className="space-y-4 p-4">
+							<div className="flex items-center justify-between">
+								<h1 className="text-sm font-semibold tracking-wide">
+									Background
+								</h1>
+								<PlusIcon className="size-4" />
+							</div>
 
-						<div className="flex flex-col gap-2">
-							{store.backgroundGradient.map((palette, paletteIdx) => (
-								<div key={paletteIdx} className="flex flex-col gap-2">
-									{palette.colors.map((hex, index) => (
-										<Popover key={index}>
-											<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
-												<PopoverTrigger asChild>
-													<div className="flex items-center gap-2 font-semibold text-neutral-400">
-														<Button
-															className="h-9 w-9 rounded-lg"
-															style={{ backgroundColor: `#${hex}` }}
-														/>
-														<div>
-															<span className="text-sm tracking-wide">{"#" + hex}</span>
-														</div>
+							<Tabs defaultValue="gradient" className="w-full">
+								<TabsList className="w-full">
+									<TabsTrigger value="gradient" onClick={() => store.setIsGradient(true)}>
+										<PaletteIcon />
+										Gradient
+									</TabsTrigger>
+									<TabsTrigger value="solid" onClick={() => store.setIsGradient(false)}>
+										<PaintbrushVerticalIcon />
+										Solid
+									</TabsTrigger>
+								</TabsList>
+
+								<TabsContent value="gradient">
+									{store.backgroundGradient.map((palette, paletteIdx) => (
+										<div key={paletteIdx} className="flex flex-col gap-2">
+											{palette.colors.map((hex, index) => (
+												<Popover key={index}>
+													<div className="flex items-center px-1 border rounded-xl h-11">
+														<PopoverTrigger asChild>
+															<div className="flex items-center gap-2 font-semibold text-neutral-400">
+																<Button
+																	className="h-9 w-9 rounded-lg"
+																	style={{ backgroundColor: `#${hex}` }}
+																/>
+																<div>
+																	<span className="text-sm tracking-wide">{"#" + hex}</span>
+																</div>
+															</div>
+														</PopoverTrigger>
+
+														<PopoverContent className="w-auto p-2">
+															<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
+														</PopoverContent>
 													</div>
-												</PopoverTrigger>
-
-												<PopoverContent className="w-auto p-10">
-													<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
-												</PopoverContent>
-											</div>
-										</Popover>
+												</Popover>
+											))}
+										</div>
 									))}
-								</div>
-							))}
-						</div>
-					</div>
+								</TabsContent>
 
-					<div className="p-4 space-y-4">
-						<div className="flex items-center justify-between">
-							<h1 className="text-sm font-semibold tracking-wide">
-								Shape
-							</h1>
-							<PlusIcon className="size-4" />
-						</div>
-
-						<div className="flex flex-col gap-2">
-							{store.shapeGradient.map((color, idx) => (
-								<div key={idx} className="flex flex-col gap-2">
+								<TabsContent value="solid">
 									<Popover>
-										<div className="flex items-center px-1 border border-neutral-100 rounded-xl h-11">
+										<div className="flex ittems-center px-1 border rounded-xl h-11">
 											<PopoverTrigger asChild>
 												<div className="flex items-center gap-2 font-semibold text-neutral-400">
 													<Button
 														className="h-9 w-9 rounded-lg"
-														style={{ backgroundColor: `#${color}` }}
+														style={{ backgroundColor: `#${store.backgroundSolid}` }}
 													/>
-													<span className="text-sm tracking-wide">{"#" + color}</span>
+													<div>
+														<span className="text-sm tracking-wide">{"#" + store.backgroundSolid}</span>
+													</div>
 												</div>
 											</PopoverTrigger>
 
 											<PopoverContent className="w-auto p-2">
-												<HexColorPicker
-													color={color}
-													onChange={(newHex) => store.setShapeGradient(idx, newHex.slice(1))}
-												/>
+												<HexColorPicker color={store.backgroundSolid} onChange={(newHex) => store.setSolidBackground(newHex.slice(1))} />
 											</PopoverContent>
 										</div>
 									</Popover>
-								</div>
-							))}
+								</TabsContent>
+							</Tabs>
+						</div>
+
+						<Separator />
+
+						<div className="space-y-4 p-4">
+							<div className="flex items-center justify-between">
+								<h1 className="text-sm font-semibold tracking-wide">
+									Shape
+								</h1>
+								<PlusIcon className="size-4" />
+							</div>
+
+							<div className="flex flex-col gap-2">
+								{store.shapeGradient.map((color, idx) => (
+									<div key={idx} className="flex flex-col gap-2">
+										<Popover>
+											<div className="flex items-center px-1 border rounded-xl h-11">
+												<PopoverTrigger asChild>
+													<div className="flex items-center gap-2 font-semibold text-neutral-400">
+														<Button
+															className="h-9 w-9 rounded-lg"
+															style={{ backgroundColor: `#${color}` }}
+														/>
+														<span className="text-sm tracking-wide">{"#" + color}</span>
+													</div>
+												</PopoverTrigger>
+
+												<PopoverContent className="w-auto p-2">
+													<HexColorPicker
+														color={color}
+														onChange={(newHex) => store.setShapeGradient(idx, newHex.slice(1))}
+													/>
+												</PopoverContent>
+											</div>
+										</Popover>
+									</div>
+								))}
+							</div>
 						</div>
 					</div>
 				</div>

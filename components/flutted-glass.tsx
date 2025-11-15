@@ -16,47 +16,18 @@ import { applyGrainEffect } from "@/lib/utils/grain-effects";
  * setUniform: send data to the uniform / setter
  */
 
-interface BgImageProps {
-	src: string;
-	withImage: boolean;
-}
-
-interface FluttedGlassProps {
-	size: number;
-	sizeRef: any;
-	distortion: number;
-	distortionRef: any;
-	fractalMargin: number;
-	fractalMarginRef: any;
-	fractalShadow: any;
-	fractalShadowRef: any;
-	bgImage: BgImageProps;
-}
-
-export const FluttedGlass = ({
-	size,
-	sizeRef,
-	distortion,
-	distortionRef,
-	fractalMargin,
-	fractalMarginRef,
-	fractalShadow,
-	fractalShadowRef,
-	bgImage,
-}: FluttedGlassProps) => {
+export const FluttedGlass = () => {
 	const store = useStore();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const programRef = useRef<WebGLProgram | null>(null);
 	const glRef = useRef<WebGL2RenderingContext | null>(null);
 	const texRef = useRef<WebGLTexture | null>(null);
 	const uniformsRef = useRef<any>(null);
+	const grainTextureRef = useRef<WebGLTexture | null>(null);
 	const renderRef = useRef<() => void>(() => { });
 
 	const RESOLUTION_WIDTH = store.resolution.width;
 	const RESOLUTION_HEIGHT = store.resolution.height;
-
-	const shift = 0.0;
-	const isGradient = true;
 
 	useEffect(() => {
 		const canvas = canvasRef.current!;
@@ -86,6 +57,7 @@ export const FluttedGlass = ({
     out vec4 fragColor;
 
     uniform sampler2D u_image;
+		uniform sampler2D u_grainTexture;
     uniform float u_imageAspect;
     uniform vec2 u_resolution;
     uniform float u_size;
@@ -93,6 +65,7 @@ export const FluttedGlass = ({
     uniform float u_shift;
     uniform float u_margin;
     uniform float u_shadow;
+		uniform float u_grainIntensity;
 
     vec2 coverUV(vec2 uv) {
       float imgRatio = u_imageAspect;
@@ -113,8 +86,18 @@ export const FluttedGlass = ({
       vec2 imgUV = coverUV(v_uv);
 
       float m = clamp(u_margin, 0.0, 0.49);
-      if (v_uv.x < m || v_uv.x > 1.0 - m || v_uv.y < m || v_uv.y > 1.0 - m) {
-        fragColor = texture(u_image, imgUV);
+			if (v_uv.x < m || v_uv.x > 1.0 - m || v_uv.y < m || v_uv.y > 1.0 - m) {
+        vec4 color = texture(u_image, imgUV);
+        
+        // Apply grain to margin areas
+        if (u_grainIntensity > 0.0) {
+          float grainValue = texture(u_grainTexture, v_uv).r;
+          float grain = (grainValue - 0.5) * u_grainIntensity;
+          color.rgb += grain;
+        }
+        
+        fragColor = color;
+
         return;
       }
 
@@ -136,6 +119,13 @@ export const FluttedGlass = ({
 
 			float shadowStrength = abs(base - 0.5) * (u_shadow * 0.3);
 			color.rgb *= (1.0 - shadowStrength);
+
+			// Apply grain on top of everything
+      if (u_grainIntensity > 0.0) {
+        float grainValue = texture(u_grainTexture, v_uv).r;
+        float grain = (grainValue - 0.5) * u_grainIntensity;
+        color.rgb += grain;
+      }
 
 			fragColor = color;
     }`;
@@ -218,15 +208,18 @@ export const FluttedGlass = ({
 		gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
 		gl.bindVertexArray(null);
-
 		gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-		// Create texture placeholder
-		const texture = gl.createTexture()!;
+		// Create main textture placeholder
+		const texture = gl.createTexture();
+		if (!texture) {
+			console.log("Failed to create main texture")
+			return;
+		}
 		texRef.current = texture;
 		gl.bindTexture(gl.TEXTURE_2D, texture);
 
-		if (bgImage.withImage) {
+		if (store.backgroundImage.withImage) {
 			// placeholder texture before image loads
 			gl.texImage2D(
 				gl.TEXTURE_2D,
@@ -244,9 +237,10 @@ export const FluttedGlass = ({
 			const gradientCanvas = document.createElement("canvas");
 			gradientCanvas.width = RESOLUTION_WIDTH;
 			gradientCanvas.height = RESOLUTION_HEIGHT;
-			const ctx = gradientCanvas.getContext("2d")!;
+			const ctx = gradientCanvas.getContext("2d");
+			if (!ctx) return;
 
-			if (isGradient) {
+			if (store.isGradient) {
 				const backgroundGradient = ctx.createLinearGradient(
 					0,
 					0,
@@ -265,12 +259,12 @@ export const FluttedGlass = ({
 				ctx.filter = "none";
 				ctx.fillStyle = backgroundGradient;
 			} else {
-				ctx.fillStyle = "#5A9690"
+				ctx.fillStyle = `#${store.backgroundSolid}`;
 			}
 
 			// Work on direction of blur
 			const filter = [
-				`blur(${store.backgroundGradientFilters.blur}px) `,
+				`blur(${store.backgroundGradientFilters.blur / 4}px) `,
 				`brightness(${store.backgroundGradientFilters.brightness}%) `,
 				`contrast(${store.backgroundGradientFilters.contrast}%)`,
 				`saturate(${store.backgroundGradientFilters.saturation}%)`
@@ -286,10 +280,6 @@ export const FluttedGlass = ({
 					color,
 				});
 			});
-
-			if (store.grainIntensity > 0) {
-				applyGrainEffect(ctx, store.grainIntensity / 100)
-			}
 
 			// Upload gradient as WebGL texture
 			gl.texImage2D(
@@ -310,21 +300,49 @@ export const FluttedGlass = ({
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 
+		// Create grain texture
 		const grainCanvas = document.createElement("canvas");
 		grainCanvas.width = RESOLUTION_WIDTH;
 		grainCanvas.height = RESOLUTION_HEIGHT;
 		const grainCtx = grainCanvas.getContext("2d");
 		if (!grainCtx) return;
 
-		grainCtx.fillStyle = "rgba(0,0,0,0)";
-		grainCtx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+		const grainImageData = grainCtx.createImageData(RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+		const grainData = grainImageData.data;
+
+
+		// Generate random noise for grain
+		for (let i = 0; i < grainData.length; i += 4) {
+			const noise = Math.random() * 255;
+			grainData[i] = noise;     // R
+			grainData[i + 1] = noise; // G
+			grainData[i + 2] = noise; // B
+			grainData[i + 3] = 255;   // A
+		}
+
+		grainCtx.putImageData(grainImageData, 0, 0);
 
 		const grainTexture = gl.createTexture()!;
-
+		grainTextureRef.current = grainTexture;
+		gl.bindTexture(gl.TEXTURE_2D, grainTexture);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			grainCanvas,
+		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		// refrence to shader var
 		const uniforms = {
 			u_image: gl.getUniformLocation(program, "u_image"),
+			u_grainTexture: gl.getUniformLocation(program, "u_grainTexture"),
 			u_imageAspect: gl.getUniformLocation(program, "u_imageAspect"),
 			u_resolution: gl.getUniformLocation(program, "u_resolution"),
 			u_size: gl.getUniformLocation(program, "u_size"),
@@ -332,6 +350,7 @@ export const FluttedGlass = ({
 			u_shift: gl.getUniformLocation(program, "u_shift"),
 			u_margin: gl.getUniformLocation(program, "u_margin"),
 			u_shadow: gl.getUniformLocation(program, "u_shadow"),
+			u_grainIntensity: gl.getUniformLocation(program, "u_grainIntensity"),
 		};
 		uniformsRef.current = uniforms; // store accross re-render for later use
 
@@ -358,17 +377,25 @@ export const FluttedGlass = ({
 			gl.useProgram(program); // activate gpu program
 			gl.bindVertexArray(vao);
 
+			// Bind main texture to TEXTURE0
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, texture);
+			gl.uniform1i(uniforms.u_image, 0);
+
+			// Bind grain texture to TEXTURE1
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, grainTexture);
+			gl.uniform1i(uniforms.u_grainTexture, 1);
 
 			// send dynamic value to shaders
 			gl.uniform1i(uniforms.u_image, 0);
 			gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
-			gl.uniform1f(uniforms.u_size, sizeRef.current);
-			gl.uniform1f(uniforms.u_distortion, distortionRef.current);
-			gl.uniform1f(uniforms.u_shift, shift);
-			gl.uniform1f(uniforms.u_margin, fractalMarginRef.current);
-			gl.uniform1f(uniforms.u_shadow, fractalShadowRef.current);
+			gl.uniform1f(uniforms.u_size, store.fractalSize);
+			gl.uniform1f(uniforms.u_distortion, store.distortion);
+			gl.uniform1f(uniforms.u_shift, 0.0);
+			gl.uniform1f(uniforms.u_margin, store.fractalMargin);
+			gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
+			gl.uniform1f(uniforms.u_grainIntensity, store.grainIntensity / 100);
 
 			// default aspect ratio
 			/* gl.uniform1f(uniforms.u_imageAspect, 1.0); */
@@ -383,10 +410,10 @@ export const FluttedGlass = ({
 		renderRef.current = render;
 
 		// Load image only if withImage = true
-		if (bgImage.withImage) {
+		if (store.backgroundImage.withImage) {
 			const img = new Image();
 			img.crossOrigin = "anonymous";
-			img.src = bgImage.src;
+			img.src = store.backgroundImage.src;
 			img.onload = () => {
 				if (!gl) return;
 				gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -431,10 +458,13 @@ export const FluttedGlass = ({
 			}
 		};
 	}, [
-		bgImage.withImage,
-		bgImage.src,
 		RESOLUTION_WIDTH,
 		RESOLUTION_HEIGHT,
+
+		store.fractalSize,
+		store.distortion,
+		store.fractalMargin,
+		store.fractalShadow,
 
 		store.backgroundGradientFilters.blur,
 		store.backgroundGradientFilters.brightness,
@@ -448,8 +478,12 @@ export const FluttedGlass = ({
 
 		store.backgroundGradient,
 		store.shapeGradient,
-
 		store.grainIntensity,
+
+		store.backgroundSolid,
+		store.isGradient,
+		store.backgroundImage.src,
+		store.backgroundImage.withImage,
 	]);
 
 	// re-render shader when size change
@@ -461,10 +495,10 @@ export const FluttedGlass = ({
 
 		if (gl && program && uniforms) {
 			gl.useProgram(program);
-			gl.uniform1f(uniforms.u_size, size);
-			gl.uniform1f(uniforms.u_distortion, distortion);
-			gl.uniform1f(uniforms.u_margin, fractalMargin);
-			gl.uniform1f(uniforms.u_shadow, fractalShadow);
+			gl.uniform1f(uniforms.u_size, store.fractalSize);
+			gl.uniform1f(uniforms.u_distortion, store.distortion);
+			gl.uniform1f(uniforms.u_margin, store.fractalMargin);
+			gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
 			render();
 		}
 	});

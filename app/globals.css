@@ -79,7 +79,7 @@
 }
 
 .slider::-webkit-slider-thumb {
-  @apply appearance-none bg-neutral-200 h-5 w-[4px] rounded-full;
+  @apply appearance-none bg-neutral-600 h-4 w-[3px] rounded-full;
 }
 
 .group:hover .slider::-webkit-slider-thumb {
@@ -122,7 +122,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 text-sm;
   }
   body {
     @apply bg-background text-foreground;
