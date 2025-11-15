@@ -12,35 +12,35 @@ import { applyGrainEffect } from "@/lib/utils/grain-effects";
  *
  * Uniforms: global variables for shaders
  * Uniform locations: help connect js to webgl program
- * getAttribLocation: get location of the uniform 
+ * getAttribLocation: get location of the uniform
  * setUniform: send data to the uniform / setter
  */
 
 export const FluttedGlass = () => {
-	const store = useStore();
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const programRef = useRef<WebGLProgram | null>(null);
-	const glRef = useRef<WebGL2RenderingContext | null>(null);
-	const texRef = useRef<WebGLTexture | null>(null);
-	const uniformsRef = useRef<any>(null);
-	const grainTextureRef = useRef<WebGLTexture | null>(null);
-	const renderRef = useRef<() => void>(() => { });
+  const store = useStore();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const programRef = useRef<WebGLProgram | null>(null);
+  const glRef = useRef<WebGL2RenderingContext | null>(null);
+  const texRef = useRef<WebGLTexture | null>(null);
+  const uniformsRef = useRef<any>(null);
+  const grainTextureRef = useRef<WebGLTexture | null>(null);
+  const renderRef = useRef<() => void>(() => {});
 
-	const RESOLUTION_WIDTH = store.resolution.width;
-	const RESOLUTION_HEIGHT = store.resolution.height;
+  const RESOLUTION_WIDTH = store.resolution.width;
+  const RESOLUTION_HEIGHT = store.resolution.height;
 
-	useEffect(() => {
-		const canvas = canvasRef.current!;
-		if (!canvas) return;
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    if (!canvas) return;
 
-		const gl = canvas.getContext("webgl2", { premultipliedAlpha: false })!;
-		if (!gl) {
-			console.error("WebGL2 not supported");
-			return;
-		}
-		glRef.current = gl;
+    const gl = canvas.getContext("webgl2", { premultipliedAlpha: false })!;
+    if (!gl) {
+      console.error("WebGL2 not supported");
+      return;
+    }
+    glRef.current = gl;
 
-		const vertexSource = `#version 300 es
+    const vertexSource = `#version 300 es
     precision highp float;
     in vec2 a_position;
     out vec2 v_uv;
@@ -50,7 +50,7 @@ export const FluttedGlass = () => {
       gl_Position = vec4(a_position, 0.0, 1.0);
     }`;
 
-		const fragmentSource = `#version 300 es
+    const fragmentSource = `#version 300 es
     precision highp float;
 
     in vec2 v_uv;
@@ -130,390 +130,394 @@ export const FluttedGlass = () => {
 			fragColor = color;
     }`;
 
-		function compileShader(shaderType: number, shaderSource: string) {
-			const shader = gl.createShader(shaderType)!;
-			gl.shaderSource(shader, shaderSource); // stores in gpu memory
-			gl.compileShader(shader); // compile it
-			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-				console.error("Shader compile error:", gl.getShaderInfoLog(shader));
-				gl.deleteShader(shader); // clean shader if err
-				return null;
-			}
-			return shader;
-		}
+    function compileShader(shaderType: number, shaderSource: string) {
+      const shader = gl.createShader(shaderType)!;
+      gl.shaderSource(shader, shaderSource); // stores in gpu memory
+      gl.compileShader(shader); // compile it
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error("Shader compile error:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader); // clean shader if err
+        return null;
+      }
+      return shader;
+    }
 
-		function createProgram(
-			vertexShaderSource: string,
-			fragmentShaderSource: string,
-		) {
-			// compile both shaders
-			const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
-			const fragmentShader = compileShader(
-				gl.FRAGMENT_SHADER,
-				fragmentShaderSource,
-			);
+    function createProgram(
+      vertexShaderSource: string,
+      fragmentShaderSource: string,
+    ) {
+      // compile both shaders
+      const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource);
+      const fragmentShader = compileShader(
+        gl.FRAGMENT_SHADER,
+        fragmentShaderSource,
+      );
 
-			if (!vertexShader || !fragmentShader) return null;
+      if (!vertexShader || !fragmentShader) return null;
 
-			const program = gl.createProgram(); // container holds both vertex and fragment
-			if (!program) {
-				console.error("Failed to create program");
-				return null;
-			};
-			gl.attachShader(program, vertexShader);
-			gl.attachShader(program, fragmentShader);
-			gl.linkProgram(program); // join into one usable gpu program
+      const program = gl.createProgram(); // container holds both vertex and fragment
+      if (!program) {
+        console.error("Failed to create program");
+        return null;
+      }
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program); // join into one usable gpu program
 
-			if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-				console.error("Program link error:", gl.getProgramInfoLog(program));
-				gl.deleteProgram(program);
-				return null;
-			}
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error("Program link error:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
+      }
 
-			// clear indivicual shader files. already merged
-			gl.detachShader(program, vertexShader);
-			gl.detachShader(program, fragmentShader);
-			gl.deleteShader(vertexShader);
-			gl.deleteShader(fragmentShader);
-			return program;
-		}
+      // clear indivicual shader files. already merged
+      gl.detachShader(program, vertexShader);
+      gl.detachShader(program, fragmentShader);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+      return program;
+    }
 
-		const program = createProgram(vertexSource, fragmentSource);
-		if (!program) {
-			console.error("Failed to create program");
-			return;
-		}
-		programRef.current = program; // store accross re-render
+    const program = createProgram(vertexSource, fragmentSource);
+    if (!program) {
+      console.error("Failed to create program");
+      return;
+    }
+    programRef.current = program; // store accross re-render
 
-		// Full-screen triangle
-		const quadVerts = new Float32Array([-1, -1, 3, -1, -1, 3]);
-		const vao = gl.createVertexArray();
-		if (!vao) {
-			console.error("Failed to create VAO");
-			return;
-		}
-		gl.bindVertexArray(vao);
+    // Full-screen triangle
+    const quadVerts = new Float32Array([-1, -1, 3, -1, -1, 3]);
+    const vao = gl.createVertexArray();
+    if (!vao) {
+      console.error("Failed to create VAO");
+      return;
+    }
+    gl.bindVertexArray(vao);
 
-		const posBuf = gl.createBuffer();
-		if (!posBuf) {
-			console.error("Failed to create position buffer");
-			return;
-		}
+    const posBuf = gl.createBuffer();
+    if (!posBuf) {
+      console.error("Failed to create position buffer");
+      return;
+    }
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-		gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, quadVerts, gl.STATIC_DRAW);
 
-		const posLoc = gl.getAttribLocation(program, "a_position");
-		gl.enableVertexAttribArray(posLoc);
-		gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    const posLoc = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-		gl.bindVertexArray(null);
-		gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindVertexArray(null);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-		// Create main textture placeholder
-		const texture = gl.createTexture();
-		if (!texture) {
-			console.log("Failed to create main texture")
-			return;
-		}
-		texRef.current = texture;
-		gl.bindTexture(gl.TEXTURE_2D, texture);
+    // Create main textture placeholder
+    const texture = gl.createTexture();
+    if (!texture) {
+      console.log("Failed to create main texture");
+      return;
+    }
+    texRef.current = texture;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
 
-		if (store.withImage) {
-			// placeholder texture before image loads
-			gl.texImage2D(
-				gl.TEXTURE_2D,
-				0,
-				gl.RGBA,
-				1,
-				1,
-				0,
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
-				new Uint8Array([0, 0, 0, 255]),
-			);
-		} else {
-			// gradient texture
-			const gradientCanvas = document.createElement("canvas");
-			gradientCanvas.width = RESOLUTION_WIDTH;
-			gradientCanvas.height = RESOLUTION_HEIGHT;
-			const ctx = gradientCanvas.getContext("2d");
-			if (!ctx) return;
+    if (store.withImage) {
+      // placeholder texture before image loads
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        1,
+        1,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        new Uint8Array([0, 0, 0, 255]),
+      );
+    } else {
+      // gradient texture
+      const gradientCanvas = document.createElement("canvas");
+      gradientCanvas.width = RESOLUTION_WIDTH;
+      gradientCanvas.height = RESOLUTION_HEIGHT;
+      const ctx = gradientCanvas.getContext("2d");
+      if (!ctx) return;
 
-			if (store.isGradient) {
-				const backgroundGradient = ctx.createLinearGradient(
-					0,
-					0,
-					RESOLUTION_WIDTH,
-					0
-				);
+      if (store.isGradient) {
+        const backgroundGradient = ctx.createLinearGradient(
+          0,
+          0,
+          RESOLUTION_WIDTH,
+          0,
+        );
 
-				store.backgroundGradient.forEach((palette) => {
-					palette.colors.forEach((color, index) => {
-						const stop = index / (palette.colors.length - 1);
-						const hex = `#${color}`;
-						backgroundGradient.addColorStop(stop, hex);
-					});
-				});
+        store.backgroundGradient.forEach((palette) => {
+          palette.colors.forEach((color, index) => {
+            const stop = index / (palette.colors.length - 1);
+            const hex = `#${color}`;
+            backgroundGradient.addColorStop(stop, hex);
+          });
+        });
 
-				ctx.filter = "none";
-				ctx.fillStyle = backgroundGradient;
-			} else {
-				ctx.fillStyle = `#${store.backgroundSolid}`;
-			}
+        ctx.filter = "none";
+        ctx.fillStyle = backgroundGradient;
+      } else {
+        ctx.fillStyle = `#${store.backgroundSolid}`;
+      }
 
-			// Work on direction of blur
-			const filter = [
-				`blur(${store.backgroundGradientFilters.blur}px) `,
-				`brightness(${store.backgroundGradientFilters.brightness}%) `,
-				`contrast(${store.backgroundGradientFilters.contrast}%)`,
-				`saturate(${store.backgroundGradientFilters.saturation}%)`
-			].filter(Boolean).join(" ");
+      // Work on direction of blur
+      const filter = [
+        `blur(${store.backgroundGradientFilters.blur}px) `,
+        `brightness(${store.backgroundGradientFilters.brightness}%) `,
+        `contrast(${store.backgroundGradientFilters.contrast}%)`,
+        `saturate(${store.backgroundGradientFilters.saturation}%)`,
+      ]
+        .filter(Boolean)
+        .join(" ");
 
-			ctx.filter = filter;
-			ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+      ctx.filter = filter;
+      ctx.fillRect(0, 0, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
 
-			store.shapeGradient.forEach((color) => {
-				drawBlobShape(ctx, {
-					x: 0,
-					y: 0,
-					color,
-				});
-			});
+      store.shapeGradient.forEach((color) => {
+        drawBlobShape(ctx, {
+          x: 0,
+          y: 0,
+          color,
+        });
+      });
 
-			// Upload gradient as WebGL texture
-			gl.texImage2D(
-				gl.TEXTURE_2D,
-				0,
-				gl.RGBA,
+      // Upload gradient as WebGL texture
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
 
-				gl.RGBA,
-				gl.UNSIGNED_BYTE,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
 
-				gradientCanvas
-			);
-		}
+        gradientCanvas,
+      );
+    }
 
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 
-		// Create grain texture
-		const grainCanvas = document.createElement("canvas");
-		grainCanvas.width = RESOLUTION_WIDTH;
-		grainCanvas.height = RESOLUTION_HEIGHT;
-		const grainCtx = grainCanvas.getContext("2d");
-		if (!grainCtx) return;
+    // Create grain texture
+    const grainCanvas = document.createElement("canvas");
+    grainCanvas.width = RESOLUTION_WIDTH;
+    grainCanvas.height = RESOLUTION_HEIGHT;
+    const grainCtx = grainCanvas.getContext("2d");
+    if (!grainCtx) return;
 
-		const grainImageData = grainCtx.createImageData(RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
-		const grainData = grainImageData.data;
+    const grainImageData = grainCtx.createImageData(
+      RESOLUTION_WIDTH,
+      RESOLUTION_HEIGHT,
+    );
+    const grainData = grainImageData.data;
 
+    // Generate random noise for grain
+    for (let i = 0; i < grainData.length; i += 4) {
+      const noise = Math.random() * 255;
+      grainData[i] = noise; // R
+      grainData[i + 1] = noise; // G
+      grainData[i + 2] = noise; // B
+      grainData[i + 3] = 255; // A
+    }
 
-		// Generate random noise for grain
-		for (let i = 0; i < grainData.length; i += 4) {
-			const noise = Math.random() * 255;
-			grainData[i] = noise;     // R
-			grainData[i + 1] = noise; // G
-			grainData[i + 2] = noise; // B
-			grainData[i + 3] = 255;   // A
-		}
+    grainCtx.putImageData(grainImageData, 0, 0);
 
-		grainCtx.putImageData(grainImageData, 0, 0);
+    const grainTexture = gl.createTexture()!;
+    grainTextureRef.current = grainTexture;
+    gl.bindTexture(gl.TEXTURE_2D, grainTexture);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      grainCanvas,
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, null);
 
-		const grainTexture = gl.createTexture()!;
-		grainTextureRef.current = grainTexture;
-		gl.bindTexture(gl.TEXTURE_2D, grainTexture);
-		gl.texImage2D(
-			gl.TEXTURE_2D,
-			0,
-			gl.RGBA,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			grainCanvas,
-		);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);;
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.bindTexture(gl.TEXTURE_2D, null);
+    // refrence to shader var
+    const uniforms = {
+      u_image: gl.getUniformLocation(program, "u_image"),
+      u_grainTexture: gl.getUniformLocation(program, "u_grainTexture"),
+      u_imageAspect: gl.getUniformLocation(program, "u_imageAspect"),
+      u_resolution: gl.getUniformLocation(program, "u_resolution"),
+      u_size: gl.getUniformLocation(program, "u_size"),
+      u_distortion: gl.getUniformLocation(program, "u_distortion"),
+      u_shift: gl.getUniformLocation(program, "u_shift"),
+      u_margin: gl.getUniformLocation(program, "u_margin"),
+      u_shadow: gl.getUniformLocation(program, "u_shadow"),
+      u_grainIntensity: gl.getUniformLocation(program, "u_grainIntensity"),
+    };
+    uniformsRef.current = uniforms; // store accross re-render for later use
 
-		// refrence to shader var
-		const uniforms = {
-			u_image: gl.getUniformLocation(program, "u_image"),
-			u_grainTexture: gl.getUniformLocation(program, "u_grainTexture"),
-			u_imageAspect: gl.getUniformLocation(program, "u_imageAspect"),
-			u_resolution: gl.getUniformLocation(program, "u_resolution"),
-			u_size: gl.getUniformLocation(program, "u_size"),
-			u_distortion: gl.getUniformLocation(program, "u_distortion"),
-			u_shift: gl.getUniformLocation(program, "u_shift"),
-			u_margin: gl.getUniformLocation(program, "u_margin"),
-			u_shadow: gl.getUniformLocation(program, "u_shadow"),
-			u_grainIntensity: gl.getUniformLocation(program, "u_grainIntensity"),
-		};
-		uniformsRef.current = uniforms; // store accross re-render for later use
+    function resizeCanvasToDisplaySize() {
+      if (
+        canvas.width !== RESOLUTION_WIDTH ||
+        canvas.height !== RESOLUTION_HEIGHT
+      ) {
+        canvas.width = RESOLUTION_WIDTH;
+        canvas.height = RESOLUTION_HEIGHT;
+        canvas.style.width = `${RESOLUTION_WIDTH}px`;
+        canvas.style.height = `${RESOLUTION_HEIGHT}px`;
+      }
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    }
 
-		function resizeCanvasToDisplaySize() {
-			if (
-				canvas.width !== RESOLUTION_WIDTH ||
-				canvas.height !== RESOLUTION_HEIGHT
-			) {
-				canvas.width = RESOLUTION_WIDTH;
-				canvas.height = RESOLUTION_HEIGHT;
-				canvas.style.width = `${RESOLUTION_WIDTH}px`;
-				canvas.style.height = `${RESOLUTION_HEIGHT}px`;
-			}
-			gl.viewport(0, 0, canvas.width, canvas.height);
-		}
+    function render() {
+      if (!gl || !program) return;
+      resizeCanvasToDisplaySize();
 
-		function render() {
-			if (!gl || !program) return;
-			resizeCanvasToDisplaySize();
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-			gl.clearColor(0, 0, 0, 0);
-			gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program); // activate gpu program
+      gl.bindVertexArray(vao);
 
-			gl.useProgram(program); // activate gpu program
-			gl.bindVertexArray(vao);
+      // Bind main texture to TEXTURE0
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.uniform1i(uniforms.u_image, 0);
 
-			// Bind main texture to TEXTURE0
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.uniform1i(uniforms.u_image, 0);
+      // Bind grain texture to TEXTURE1
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, grainTexture);
+      gl.uniform1i(uniforms.u_grainTexture, 1);
 
-			// Bind grain texture to TEXTURE1
-			gl.activeTexture(gl.TEXTURE1);
-			gl.bindTexture(gl.TEXTURE_2D, grainTexture);
-			gl.uniform1i(uniforms.u_grainTexture, 1);
+      // send dynamic value to shaders
+      gl.uniform1i(uniforms.u_image, 0);
+      gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
+      gl.uniform1f(uniforms.u_size, store.fractalSize);
+      gl.uniform1f(uniforms.u_distortion, store.distortion);
+      gl.uniform1f(uniforms.u_shift, 0.0);
+      gl.uniform1f(uniforms.u_margin, store.fractalMargin);
+      gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
+      gl.uniform1f(uniforms.u_grainIntensity, store.grainIntensity / 100);
 
-			// send dynamic value to shaders
-			gl.uniform1i(uniforms.u_image, 0);
-			gl.uniform2f(uniforms.u_resolution, RESOLUTION_WIDTH, RESOLUTION_HEIGHT);
-			gl.uniform1f(uniforms.u_size, store.fractalSize);
-			gl.uniform1f(uniforms.u_distortion, store.distortion);
-			gl.uniform1f(uniforms.u_shift, 0.0);
-			gl.uniform1f(uniforms.u_margin, store.fractalMargin);
-			gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
-			gl.uniform1f(uniforms.u_grainIntensity, store.grainIntensity / 100);
+      // default aspect ratio
+      /* gl.uniform1f(uniforms.u_imageAspect, 1.0); */
+      const screenAspect = RESOLUTION_WIDTH / RESOLUTION_HEIGHT;
+      gl.uniform1f(uniforms.u_imageAspect, screenAspect);
 
-			// default aspect ratio
-			/* gl.uniform1f(uniforms.u_imageAspect, 1.0); */
-			const screenAspect = RESOLUTION_WIDTH / RESOLUTION_HEIGHT;
-			gl.uniform1f(uniforms.u_imageAspect, screenAspect);
+      gl.drawArrays(gl.TRIANGLES, 0, 3); // execute shader on gpu
 
-			gl.drawArrays(gl.TRIANGLES, 0, 3); // execute shader on gpu
+      gl.bindVertexArray(null);
+      gl.useProgram(null);
+    }
+    renderRef.current = render;
 
-			gl.bindVertexArray(null);
-			gl.useProgram(null);
-		}
-		renderRef.current = render;
+    // Load image only if withImage = true
+    if (store.withImage) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = store.backgroundImage.src;
+      img.onload = () => {
+        if (!gl) return;
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          img,
+        );
 
-		// Load image only if withImage = true
-		if (store.withImage) {
-			const img = new Image();
-			img.crossOrigin = "anonymous";
-			img.src = store.backgroundImage.src;
-			img.onload = () => {
-				if (!gl) return;
-				gl.bindTexture(gl.TEXTURE_2D, texture);
-				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-				gl.texImage2D(
-					gl.TEXTURE_2D,
-					0,
-					gl.RGBA,
-					gl.RGBA,
-					gl.UNSIGNED_BYTE,
-					img,
-				);
+        const aspect = img.width / img.height;
+        gl.useProgram(program);
+        gl.uniform1f(uniforms.u_imageAspect, aspect);
+        gl.useProgram(null);
 
-				const aspect = img.width / img.height;
-				gl.useProgram(program);
-				gl.uniform1f(uniforms.u_imageAspect, aspect);
-				gl.useProgram(null);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        render();
+      };
+      img.onerror = (e) => {
+        console.error("Failed to load image", e);
+      };
+    } else {
+      render();
+    }
 
-				gl.bindTexture(gl.TEXTURE_2D, null);
-				render();
-			};
-			img.onerror = (e) => {
-				console.error("Failed to load image", e);
-			};
-		} else {
-			render();
-		}
+    const handleResize = () => {
+      resizeCanvasToDisplaySize();
+      render();
+    };
+    window.addEventListener("resize", handleResize);
 
-		const handleResize = () => {
-			resizeCanvasToDisplaySize();
-			render();
-		};
-		window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (glRef.current) {
+        if (texRef.current) glRef.current.deleteTexture(texRef.current);
 
-		return () => {
-			window.removeEventListener("resize", handleResize);
-			if (glRef.current) {
-				if (texRef.current) glRef.current.deleteTexture(texRef.current);
+        if (programRef.current) glRef.current.deleteProgram(programRef.current);
+        glRef.current = null;
+      }
+    };
+  }, [
+    RESOLUTION_WIDTH,
+    RESOLUTION_HEIGHT,
 
-				if (programRef.current) glRef.current.deleteProgram(programRef.current);
-				glRef.current = null;
-			}
-		};
-	}, [
-		RESOLUTION_WIDTH,
-		RESOLUTION_HEIGHT,
+    store.fractalSize,
+    store.distortion,
+    store.fractalMargin,
+    store.fractalShadow,
 
-		store.fractalSize,
-		store.distortion,
-		store.fractalMargin,
-		store.fractalShadow,
+    store.backgroundGradientFilters.blur,
+    store.backgroundGradientFilters.brightness,
+    store.backgroundGradientFilters.contrast,
+    store.backgroundGradientFilters.saturation,
 
-		store.backgroundGradientFilters.blur,
-		store.backgroundGradientFilters.brightness,
-		store.backgroundGradientFilters.contrast,
-		store.backgroundGradientFilters.saturation,
+    store.shapeGradientFilters.blur,
+    store.shapeGradientFilters.brightness,
+    store.shapeGradientFilters.contrast,
+    store.shapeGradientFilters.saturation,
 
-		store.shapeGradientFilters.blur,
-		store.shapeGradientFilters.brightness,
-		store.shapeGradientFilters.contrast,
-		store.shapeGradientFilters.saturation,
+    store.backgroundGradient,
+    store.shapeGradient,
+    store.grainIntensity,
 
-		store.backgroundGradient,
-		store.shapeGradient,
-		store.grainIntensity,
+    store.backgroundSolid,
+    store.isGradient,
+    store.backgroundImage.src,
+    store.withImage,
+  ]);
 
-		store.backgroundSolid,
-		store.isGradient,
-		store.backgroundImage.src,
-		store.withImage,
-	]);
+  // re-render shader when size change
+  useEffect(() => {
+    const gl = glRef.current;
+    const program = programRef.current;
+    const uniforms = uniformsRef.current;
+    const render = renderRef.current;
 
-	// re-render shader when size change
-	useEffect(() => {
-		const gl = glRef.current;
-		const program = programRef.current;
-		const uniforms = uniformsRef.current;
-		const render = renderRef.current;
+    if (gl && program && uniforms) {
+      gl.useProgram(program);
+      gl.uniform1f(uniforms.u_size, store.fractalSize);
+      gl.uniform1f(uniforms.u_distortion, store.distortion);
+      gl.uniform1f(uniforms.u_margin, store.fractalMargin);
+      gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
+      render();
+    }
+  }, []);
 
-		if (gl && program && uniforms) {
-			gl.useProgram(program);
-			gl.uniform1f(uniforms.u_size, store.fractalSize);
-			gl.uniform1f(uniforms.u_distortion, store.distortion);
-			gl.uniform1f(uniforms.u_margin, store.fractalMargin);
-			gl.uniform1f(uniforms.u_shadow, store.fractalShadow);
-			render();
-		}
-	}, []);
-
-	return (
-		<canvas
-			ref={canvasRef}
-			width={store.resolution.width}
-			height={store.resolution.height}
-			style={{
-				width: "100%",
-				height: "100%",
-				boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-				borderRadius: 55,
-			}}
-		/>
-	);
+  return (
+    <canvas
+      ref={canvasRef}
+      width={store.resolution.width}
+      height={store.resolution.height}
+      style={{
+        width: "100%",
+        height: "100%",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+        borderRadius: 55,
+      }}
+    />
+  );
 };

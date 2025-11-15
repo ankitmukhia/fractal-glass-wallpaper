@@ -4,7 +4,11 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useState, useRef } from "react";
 import { FluttedGlass } from "@/components/flutted-glass";
-import { defaultRangeValues, exampleImages } from "@/lib/constants";
+import {
+	defaultRangeValues,
+	exampleImages,
+	resolutionsSizes,
+} from "@/lib/constants";
 import {
 	PlusIcon,
 	ChevronDownIcon,
@@ -14,8 +18,10 @@ import {
 	PaletteIcon,
 	BoxIcon,
 	PaintbrushVerticalIcon,
-	XIcon
+	XIcon,
+	ShuffleIcon
 } from "lucide-react";
+import { RightArrowIcon, LeftArrowIcon } from "@/assets/icons/svgs";
 import { RangeInput } from "@/components/ui/range-input";
 import { useStore } from "@/stores/fractal-store";
 import {
@@ -28,7 +34,8 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
+import { RainbowButton } from "@/components/ui/rainbow-button";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,8 +58,8 @@ export const Desktop = () => {
 			render.onloadend = () => {
 				store.setWithImage(true);
 				store.setBackgroundImage({ src: render.result as string });
-			}
-			render.readAsDataURL(file)
+			};
+			render.readAsDataURL(file);
 		}
 	}
 
@@ -76,12 +83,18 @@ export const Desktop = () => {
 		store.setFractalShadow(v);
 	}
 
-	function handleBgGradientFilterChange(e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof store.backgroundGradientFilters) {
+	function handleBgGradientFilterChange(
+		e: React.ChangeEvent<HTMLInputElement>,
+		key: keyof typeof store.backgroundGradientFilters,
+	) {
 		const v = parseFloat(e.target.value);
 		store.setBackgroundGradientFilters(key, v);
 	}
 
-	function handleShapeGradientFilterChange(e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof store.shapeGradientFilters) {
+	function handleShapeGradientFilterChange(
+		e: React.ChangeEvent<HTMLInputElement>,
+		key: keyof typeof store.shapeGradientFilters,
+	) {
 		const v = parseFloat(e.target.value);
 		store.setShapeGradientFiltersSet(key, v);
 	}
@@ -198,7 +211,9 @@ export const Desktop = () => {
 														max={1200}
 														step={1}
 														value={store.backgroundGradientFilters.blur}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "blur")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleBgGradientFilterChange(e, "blur")}
 													/>
 
 													<RangeInput
@@ -207,7 +222,9 @@ export const Desktop = () => {
 														max={200}
 														step={1}
 														value={store.backgroundGradientFilters.saturation}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "saturation")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleBgGradientFilterChange(e, "saturation")}
 													/>
 
 													<RangeInput
@@ -216,7 +233,9 @@ export const Desktop = () => {
 														max={200}
 														step={1}
 														value={store.backgroundGradientFilters.contrast}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "contrast")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleBgGradientFilterChange(e, "contrast")}
 													/>
 
 													<RangeInput
@@ -225,7 +244,9 @@ export const Desktop = () => {
 														max={200}
 														step={2}
 														value={store.backgroundGradientFilters.brightness}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBgGradientFilterChange(e, "brightness")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleBgGradientFilterChange(e, "brightness")}
 													/>
 												</div>
 											</TabsContent>
@@ -238,7 +259,9 @@ export const Desktop = () => {
 														max={100}
 														step={1}
 														value={store.shapeGradientFilters.blur}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "blur")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleShapeGradientFilterChange(e, "blur")}
 													/>
 													<RangeInput
 														label="Saturation"
@@ -246,7 +269,11 @@ export const Desktop = () => {
 														max={200}
 														step={1}
 														value={store.shapeGradientFilters.saturation}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "saturation")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) =>
+															handleShapeGradientFilterChange(e, "saturation")
+														}
 													/>
 
 													<RangeInput
@@ -255,7 +282,9 @@ export const Desktop = () => {
 														max={200}
 														step={1}
 														value={store.shapeGradientFilters.contrast}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "contrast")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) => handleShapeGradientFilterChange(e, "contrast")}
 													/>
 
 													<RangeInput
@@ -264,7 +293,11 @@ export const Desktop = () => {
 														max={200}
 														step={2}
 														value={store.shapeGradientFilters.brightness}
-														onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleShapeGradientFilterChange(e, "brightness")}
+														onChange={(
+															e: React.ChangeEvent<HTMLInputElement>,
+														) =>
+															handleShapeGradientFilterChange(e, "brightness")
+														}
 													/>
 												</div>
 											</TabsContent>
@@ -290,7 +323,9 @@ export const Desktop = () => {
 												type="file"
 												className="hidden"
 											/>
-											<p className="font-semibold text-neutral-400">Upload Image</p>
+											<p className="font-semibold text-neutral-400">
+												Upload Image
+											</p>
 										</div>
 
 										<div className="grid grid-cols-2 gap-2">
@@ -298,11 +333,15 @@ export const Desktop = () => {
 												<div
 													key={value.alt}
 													className={cn(`relative aspect-video rounded-lg`, {
-														"border border-foreground/80": index === store.backgroundImage.currentIndex
+														"border border-foreground/80":
+															index === store.backgroundImage.currentIndex,
 													})}
 													onClick={() => {
 														store.setWithImage(true);
-														store.setBackgroundImage({ src: value.src, currentIndex: index });
+														store.setBackgroundImage({
+															src: value.src,
+															currentIndex: index,
+														});
 													}}
 												>
 													<Image
@@ -317,7 +356,6 @@ export const Desktop = () => {
 										</div>
 									</div>
 								</TabsContent>
-
 							</Tabs>
 						</div>
 
@@ -330,65 +368,89 @@ export const Desktop = () => {
 								max={100}
 								step={1}
 								value={store.grainIntensity}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleGrainIntensityChange(e)}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+									handleGrainIntensityChange(e)
+								}
 							/>
 						</div>
 					</div>
 				</div>
 
-				<div className="fixed top-4 left-1/2 -translate-x-1/2 z-10 border bg-accent rounded-3xl p-2">
-					<div className="flex gap-4">
-						<div>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild className="rounded-xl">
-									<Button variant="outline">
-										100%
-										<ChevronDownIcon className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent>
-									{/* <DropdownMenuSeparator /> */}
-									<DropdownMenuItem
+				<div className="fixed top-3 left-1/2 z-20 -translate-x-1/2 rounded-[1.25rem]">
+					<div className="flex items-center gap-4 p-2">
+						<Button variant="secondary">
+							<ShuffleIcon />
+							Shuffle
+						</Button>
+
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									className="border dark:border-border/30"
+								>
+									<span>100%</span>
+									<ChevronDownIcon className="size-4 text-muted-foreground/70" />
+								</Button>
+							</PopoverTrigger>
+
+							<PopoverContent className="w-44 p-[6px] dark:border-border/30 rounded-lg" align="start">
+								<div className="flex flex-col items-start">
+									<Button
+										size="sm"
+										variant="ghost"
+										className="flex justify-start w-full rounded-lg px-2 text-foreground/60 hover:text-foreground"
 										onClick={() => setZoom((prev) => Math.min(prev + 0.1, 1.0))}
 									>
 										Zoom in
-									</DropdownMenuItem>
-									<DropdownMenuItem
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="flex justify-start w-full rounded-lg px-2 text-foreground/60 hover:text-foreground"
 										onClick={() => setZoom((prev) => Math.max(prev - 0.1, 0.1))}
 									>
 										Zoom out
-									</DropdownMenuItem>
-									<DropdownMenuItem onClick={() => setZoom(1.0)}>
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="flex justify-start w-full rounded-lg px-2 text-foreground/60 hover:text-foreground"
+										onClick={() => setZoom(1.0)}
+									>
 										Zoom to 100%
-									</DropdownMenuItem>
-									<DropdownMenuItem>Zoom to fit</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="flex justify-start w-full rounded-lg px-2 text-foreground/60 hover:text-foreground"
+									>
+										Zoom to fit
+									</Button>
+								</div>
+							</PopoverContent>
+						</Popover>
+
 						<div className="flex gap-2">
 							<Button
-								variant="link"
-								className="rounded-xl"
 								onClick={() =>
 									setPosition((prev) => ({ x: prev.x - 40, y: prev.y }))
 								}
 							>
-								<svg className="inline-flex size-5 fill-primary rotate-180" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+								<RightArrowIcon />
 							</Button>
 							<Button
-								variant="link"
-								className="rounded-xl"
 								onClick={() =>
 									setPosition((prev) => ({ x: prev.x + 40, y: prev.y }))
 								}
 							>
-								<svg className="inline-flex size-5 fill-primary" width="20" height="20" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+								<LeftArrowIcon />
 							</Button>
 						</div>
 
-						<Button className="bg-neutral-200 text-neutral-700 border border-neutral-300">
+						<RainbowButton className="w-45">
 							Export
-						</Button>
+						</RainbowButton>
 					</div>
 				</div>
 
@@ -424,20 +486,94 @@ export const Desktop = () => {
 				<div className="min-w-80 max-w-96 bg-sidebar border rounded-3xl">
 					<div className="flex flex-col w-full h-full">
 						<div className="space-y-4 p-4">
-							<div className="flex items-center justify-between">
-								<h1 className="text-sm font-semibold tracking-wide">
-									Background
-								</h1>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild className="w-full rounded-lg">
+									<Button variant="outline" className="flex justify-between">
+										<div className="flex items-center gap-2">
+											{
+												resolutionsSizes.find(
+													(size) =>
+														size.width === store.resolution.width &&
+														size.height === store.resolution.height,
+												)?.name
+											}
+											<span className="pl-2 text-muted-foreground/60">
+												{store.resolution.width}x{store.resolution.height}
+											</span>
+										</div>
+										<ChevronDownIcon />
+									</Button>
+								</DropdownMenuTrigger>
+
+								<DropdownMenuContent
+									align="start"
+									className="w-[var(--radix-dropdown-menu-trigger-width)] p-[6px] rounded-lg"
+								>
+									{resolutionsSizes.map((size) => (
+										<DropdownMenuItem
+											key={size.width}
+											className={cn(
+												`flex flex-col focus:bg-accent/10 w-full p-2 rounded-lg cursor-pointer text-foreground/60 hover:text-foreground`,
+												{
+													"bg-accent focus:bg-acc":
+														store.resolution.width === size.width &&
+														store.resolution.height === size.height,
+												},
+											)}
+											onClick={() =>
+												store.setResolution(size.width, size.height)
+											}
+										>
+											<span className="self-start">
+												{size.width}x{size.height}
+											</span>
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+
+							<div className="flex items-center gap-2">
+								<div className="relative">
+									<span className="absolute top-[50%] -translate-y-1/2 pl-2">
+										W
+									</span>
+									<Input
+										type="number"
+										className="pl-7.5 max-w-40"
+										defaultValue={store.resolution.width}
+									/>
+								</div>
+								<div className="relative">
+									<span className="absolute top-[50%] -translate-y-1/2 pl-2">
+										H
+									</span>
+									<Input
+										type="number"
+										className="pl-7.5 max-w-40"
+										defaultValue={store.resolution.height}
+									/>
+								</div>
+								<span className="px-5 text-center">px</span>
+							</div>
+
+							<div className="flex items-center justify-between px-1">
+								<h1>Background</h1>
 								<PlusIcon className="size-4" />
 							</div>
 
 							<Tabs defaultValue="gradient" className="w-full">
 								<TabsList className="w-full">
-									<TabsTrigger value="gradient" onClick={() => store.setIsGradient(true)}>
+									<TabsTrigger
+										value="gradient"
+										onClick={() => store.setIsGradient(true)}
+									>
 										<PaletteIcon />
 										Gradient
 									</TabsTrigger>
-									<TabsTrigger value="solid" onClick={() => store.setIsGradient(false)}>
+									<TabsTrigger
+										value="solid"
+										onClick={() => store.setIsGradient(false)}
+									>
 										<PaintbrushVerticalIcon />
 										Solid
 									</TabsTrigger>
@@ -457,7 +593,9 @@ export const Desktop = () => {
 																			className="h-5 px-3 rounded-none border border-input"
 																			style={{ backgroundColor: `#${hex}` }}
 																		/>
-																		<span className="tracking-wide lowercase">{"#" + hex}</span>
+																		<span className="tracking-wide lowercase">
+																			{"#" + hex}
+																		</span>
 																	</div>
 																	<div>
 																		<XIcon className="size-4" />
@@ -466,7 +604,16 @@ export const Desktop = () => {
 															</PopoverTrigger>
 
 															<PopoverContent className="w-auto p-2">
-																<HexColorPicker color={hex} onChange={(newHex) => store.setBackgroundGradient(palette.name, index, newHex.slice(1))} />
+																<HexColorPicker
+																	color={hex}
+																	onChange={(newHex) =>
+																		store.setBackgroundGradient(
+																			palette.name,
+																			index,
+																			newHex.slice(1),
+																		)
+																	}
+																/>
 															</PopoverContent>
 														</div>
 													</Popover>
@@ -483,10 +630,14 @@ export const Desktop = () => {
 														<div className="flex items-center gap-3">
 															<Button
 																className="h-5 px-3 rounded-none border border-input"
-																style={{ backgroundColor: `#${store.backgroundSolid}` }}
+																style={{
+																	backgroundColor: `#${store.backgroundSolid}`,
+																}}
 															/>
 															<div>
-																<span className="text-sm tracking-wide">{"#" + store.backgroundSolid}</span>
+																<span className="text-sm tracking-wide">
+																	{"#" + store.backgroundSolid}
+																</span>
 															</div>
 														</div>
 
@@ -497,7 +648,12 @@ export const Desktop = () => {
 												</PopoverTrigger>
 
 												<PopoverContent className="w-auto p-2">
-													<HexColorPicker color={store.backgroundSolid} onChange={(newHex) => store.setSolidBackground(newHex.slice(1))} />
+													<HexColorPicker
+														color={store.backgroundSolid}
+														onChange={(newHex) =>
+															store.setSolidBackground(newHex.slice(1))
+														}
+													/>
 												</PopoverContent>
 											</div>
 										</Popover>
@@ -509,10 +665,8 @@ export const Desktop = () => {
 						<Separator />
 
 						<div className="space-y-4 p-4">
-							<div className="flex items-center justify-between">
-								<h1 className="text-sm font-semibold tracking-wide">
-									Shape
-								</h1>
+							<div className="flex items-center justify-between px-1">
+								<h1>Shape</h1>
 								<PlusIcon className="size-4" />
 							</div>
 
@@ -528,7 +682,9 @@ export const Desktop = () => {
 																className="h-5 px-3 rounded-none border border-input"
 																style={{ backgroundColor: `#${color}` }}
 															/>
-															<span className="tracking-wide lowercase">{"#" + color}</span>
+															<span className="tracking-wide lowercase">
+																{"#" + color}
+															</span>
 														</div>
 														<div>
 															<XIcon className="size-4" />
@@ -539,7 +695,9 @@ export const Desktop = () => {
 												<PopoverContent className="w-auto p-2">
 													<HexColorPicker
 														color={color}
-														onChange={(newHex) => store.setShapeGradient(idx, newHex.slice(1))}
+														onChange={(newHex) =>
+															store.setShapeGradient(idx, newHex.slice(1))
+														}
 													/>
 												</PopoverContent>
 											</div>
@@ -552,5 +710,5 @@ export const Desktop = () => {
 				</div>
 			</div>
 		</div>
-	)
-}
+	);
+};

@@ -43,6 +43,7 @@ interface StoreActions {
   setFractalMargin: (margin: number) => void;
   setFractalShadow: (shadow: number) => void;
   setWithImage: (img: boolean) => void;
+  setResolution: (width: number, height: number) => void;
   setBackgroundImage: ({
     src,
     currentIndex,
@@ -78,6 +79,13 @@ export const useStore = create<StoreState & StoreActions>((set) => ({
   backgroundGradient: backgroundGradientPalettes,
   backgroundSolid: solidBackgroundColor,
   shapeGradient: gradientShapeColors,
+  setResolution: (width, height) =>
+    set(() => ({
+      resolution: {
+        width,
+        height,
+      },
+    })),
   backgroundGradientFilters: {
     blur: 0,
     brightness: 100,
