@@ -88,21 +88,13 @@
   --color-color-2: var(--color-2);
   --color-color-1: var(--color-1);
   @keyframes rainbow {
-  0% {
-    background-position: 0%;
+    0% {
+      background-position: 0%;
     }
-  100% {
-    background-position: 200%;
+    100% {
+      background-position: 200%;
     }
   }
-}
-
-.slider::-webkit-slider-thumb {
-  @apply appearance-none bg-foreground/20 h-4 w-[3px] rounded-full;
-}
-
-.group:hover .slider::-webkit-slider-thumb {
-  @apply bg-foreground/30;
 }
 
 .dark {
@@ -121,7 +113,7 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 0.04);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
@@ -153,11 +145,19 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+.slider::-webkit-slider-thumb {
+  @apply appearance-none bg-foreground/20 h-4 w-[3px] rounded-full;
+}
+
+.group:hover .slider::-webkit-slider-thumb {
+  @apply bg-foreground/30;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

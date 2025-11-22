@@ -1,91 +1,108 @@
-// have a feature to add/positning shape as user please.
-import { useStore } from "@/stores/fractal-store";
+// Types for blob data
+export type BlobData = {
+  x: number;
+  y: number;
+  radius: number;
+  stretchY: number;
+  rotation: number;
+  points: { x: number; y: number }[];
+};
 
-export function drawBlobShape(
-  ctx: CanvasRenderingContext2D,
-  position: {
-    x: number;
-    y: number;
-    color: string;
-  },
-) {
-  const { width, height } = ctx.canvas;
-  const blobs: {
-    x: number;
-    y: number;
-    radius: number;
-    stretchY: number;
-    rotation: number;
-  }[] = [];
+export type ShapeWithBlob = {
+  color: string;
+  blobData?: BlobData; // Store pre-generated blob data
+};
 
-  // --- Generate 1 blob (no overlap logic needed if only 1 blob per draw) ---
+// Generate blob data once - call this when creating/shuffling shapes
+export function generateBlobData(
+  canvasWidth: number,
+  canvasHeight: number,
+): BlobData {
   const baseRadius = 100 + Math.random() * 120;
   const stretchY = 1.8 + Math.random() * 1.2;
   const rotation = ((Math.random() - 0.5) * 80 * Math.PI) / 180;
 
   const safeMarginX = baseRadius * 2;
   const safeMarginY = baseRadius * stretchY * 2;
-  const x = safeMarginX + Math.random() * (width - safeMarginX * 2);
-  const y = safeMarginY + Math.random() * (height - safeMarginY * 2);
+  const x = safeMarginX + Math.random() * (canvasWidth - safeMarginX * 2);
 
-  blobs.push({ x, y, radius: baseRadius, stretchY, rotation });
+  const y = safeMarginY + Math.random() * (canvasHeight - safeMarginY * 2);
 
-  // --- Apply store filters ---
+  // Generate shape points
+  const numPoints = 12 + Math.floor(Math.random() * 4);
+  const angleStep = (Math.PI * 2) / numPoints;
 
-  const filters = useStore.getState().shapeGradientFilters;
-  ctx.filter = [
-    `blur(${filters.blur}px)`,
-    `brightness(${filters.brightness}%)`,
-    `contrast(${filters.contrast}%)`,
-    `saturate(${filters.saturation}%)`,
-  ].join(" ");
+  const points: { x: number; y: number }[] = [];
 
-  // --- Draw blob with a single solid color ---
-  blobs.forEach((blob) => {
-    ctx.save();
-    ctx.translate(blob.x, blob.y);
+  for (let i = 0; i < numPoints; i++) {
+    const angle = i * angleStep;
+    const radiusJitter = baseRadius * (0.7 + Math.random() * 0.6);
 
-    ctx.rotate(blob.rotation);
+    const px = Math.cos(angle) * radiusJitter;
+    const py = Math.sin(angle) * radiusJitter * stretchY;
+    points.push({ x: px, y: py });
+  }
 
-    const path = new Path2D();
-    const points: { x: number; y: number }[] = [];
-    const numPoints = 12 + Math.floor(Math.random() * 4);
-    const angleStep = (Math.PI * 2) / numPoints;
+  return { x, y, radius: baseRadius, stretchY, rotation, points };
+}
 
-    for (let i = 0; i < numPoints; i++) {
-      const angle = i * angleStep;
-      const radiusJitter = blob.radius * (0.7 + Math.random() * 0.6);
-      const px = Math.cos(angle) * radiusJitter;
-      const py = Math.sin(angle) * radiusJitter * blob.stretchY;
-      points.push({ x: px, y: py });
-    }
+// Draw blob using pre-generated data
+export function drawBlobShape(
+  ctx: CanvasRenderingContext2D,
+  shape: ShapeWithBlob,
+  shapeFilterStrings: string,
+) {
+  // if no blob data exists, generate it
+  if (!shape.blobData) {
+    shape.blobData = generateBlobData(ctx.canvas.width, ctx.canvas.height);
+  }
 
-    for (let i = 0; i < points.length; i++) {
-      const p0 = points[(i - 1 + points.length) % points.length];
-      const p1 = points[i];
-      const p2 = points[(i + 1) % points.length];
-      const p3 = points[(i + 2) % points.length];
+  const blob = shape.blobData;
 
-      if (i === 0) path.moveTo(p1.x, p1.y);
+  // Apply filters
+  ctx.filter = shapeFilterStrings;
+  ctx.save();
+  ctx.translate(blob.x, blob.y);
+  ctx.rotate(blob.rotation);
 
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
+  const path = new Path2D();
+  const points = blob.points;
 
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
+  for (let i = 0; i < points.length; i++) {
+    const p0 = points[(i - 1 + points.length) % points.length];
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    const p3 = points[(i + 2) % points.length];
 
-      path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
-    }
-    path.closePath();
+    if (i === 0) path.moveTo(p1.x, p1.y);
 
-    ctx.fillStyle = `#${position.color}`;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
 
-    ctx.fill(path);
+    path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+  }
 
-    ctx.restore();
-  });
+  path.closePath();
+
+  ctx.fillStyle = `#${shape.color}`;
+  ctx.fill(path);
+  ctx.restore();
 
   ctx.filter = "none";
+}
+
+// Helper function to shuffle/regenerate all blobs
+export function shuffleBlobs(
+  shapes: ShapeWithBlob[],
+  canvasWidth: number,
+  canvasHeight: number,
+): ShapeWithBlob[] {
+  return shapes.map((shape) => ({
+    ...shape,
+    blobData: generateBlobData(canvasWidth, canvasHeight),
+  }));
 }
 
 export function getRangeStep(
