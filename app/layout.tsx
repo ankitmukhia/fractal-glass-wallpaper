@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     description: "A super simple tool to create fractal wallpapers.",
     type: "website",
     siteName: "Fractal Wallpaper",
-    url: "https://fractal-wallpaper.vercel.app",
+    url: "https://fractal-glass-wallpaper.vercel.app/",
     locale: "en_US",
     images: [
       {
