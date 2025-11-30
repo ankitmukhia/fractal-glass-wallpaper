@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     description: "A super simple tool to create fractal wallpapers.",
     type: "website",
     siteName: "Fractal Wallpaper",
-    url: "/",
+    url: "https://fractal-glass-wallpaper.vercel.app",
     locale: "en_US",
     images: [
       {
         url: "https://fractal-glass-wallpaper.vercel.app/os-fractal.png",
         width: 1200,
-        height: 675,
+        height: 630,
         alt: "Fractal Wallpaper",
       },
     ],
@@ -33,7 +33,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Fractal Wallpaper | Create fractal wallpapers",
     description: "A super simple tool to create fractal wallpapers.",
-    images: ["https://fractal-glass-wallpaper.vercel.app/twitter-fractal.png"],
+    images: [{
+			url: "https://fractal-glass-wallpaper.vercel.app/twitter-fractal.png",
+      width: 1200,
+      height: 630,
+      alt: "Fractal Wallpaper",
+	}],
   },
 };
 
