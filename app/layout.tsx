@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/open-graph-fractal.png",
+        url: "/os-fractal.png",
         width: 1200,
         height: 630,
         alt: "Fractal Wallpaper",
