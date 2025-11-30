@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Fractal Wallpaper | Create fractal wallpapers",
     description: "A super simple tool to create fractal wallpapers.",
-    images: ["https://fractal-glass-wallpaper.vercel.app/os-fractal.png"],
+    images: ["https://fractal-glass-wallpaper.vercel.app/twitter-fractal.png"],
   },
 };
 
