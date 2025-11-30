@@ -12,16 +12,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Fractal Wallpaper | Create fractal wallpapers",
   description: "A super simple tool to create fractal wallpapers.",
+  metadataBase: new URL("https://fractal-glass-wallpaper.vercel.app"),
   openGraph: {
     title: "Fractal Wallpaper | Create fractal wallpapers",
     description: "A super simple tool to create fractal wallpapers.",
     type: "website",
     siteName: "Fractal Wallpaper",
-    url: new URL("https://fractal-glass-wallpaper.vercel.app/"),
+    url: "/",
     locale: "en_US",
     images: [
       {
-        url: "https://fractal-glass-wallpaper.vercel.app/open-graph-fractal.png",
+        url: "/open-graph-fractal.png",
         width: 1200,
         height: 630,
         alt: "Fractal Wallpaper",
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
     title: "Fractal Wallpaper | Create fractal wallpapers",
     description: "A super simple tool to create fractal wallpapers.",
     card: "summary_large_image",
-    images: ["https://fractal-glass-wallpaper.vercel.app/twitter-fractal.png"],
+    images: ["/twitter-fractal.png"],
   },
 };
 
