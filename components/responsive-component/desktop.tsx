@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { FluttedGlass } from "@/components/opt-flutted-glass";
 /* import { FluttedGlass } from "@/components/flutted-glass"; */
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import {
   defaultRangeValues,
   exampleImages,
@@ -48,6 +49,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { HexColorPicker } from "react-colorful";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 const Movable = dynamic(() => import("@/components/movable"), { ssr: false });
 
 export const Desktop = ({
@@ -123,7 +125,7 @@ export const Desktop = ({
 
   function handleBgGradientFilterChange(
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof typeof store.backgroundGradientFilters,
+    key: keyof typeof store.backgroundGradientFilters
   ) {
     const v = parseFloat(e.target.value);
     store.setBackgroundGradientFilters(key, v);
@@ -131,7 +133,7 @@ export const Desktop = ({
 
   function handleShapeGradientFilterChange(
     e: React.ChangeEvent<HTMLInputElement>,
-    key: keyof typeof store.shapeGradientFilters,
+    key: keyof typeof store.shapeGradientFilters
   ) {
     const v = parseFloat(e.target.value);
     store.setShapeGradientFiltersSet(key, v);
@@ -270,7 +272,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.backgroundGradientFilters.blur}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleBgGradientFilterChange(e, "blur")}
                           />
 
@@ -282,7 +284,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.backgroundGradientFilters.saturation}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleBgGradientFilterChange(e, "saturation")}
                           />
 
@@ -294,7 +296,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.backgroundGradientFilters.contrast}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleBgGradientFilterChange(e, "contrast")}
                           />
 
@@ -306,7 +308,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.backgroundGradientFilters.brightness}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleBgGradientFilterChange(e, "brightness")}
                           />
                         </div>
@@ -322,7 +324,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.shapeGradientFilters.blur}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleShapeGradientFilterChange(e, "blur")}
                           />
                           <RangeInput
@@ -333,7 +335,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.shapeGradientFilters.saturation}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) =>
                               handleShapeGradientFilterChange(e, "saturation")
                             }
@@ -347,7 +349,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.shapeGradientFilters.contrast}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) => handleShapeGradientFilterChange(e, "contrast")}
                           />
 
@@ -359,7 +361,7 @@ export const Desktop = ({
                             disabled={store.withImage}
                             value={store.shapeGradientFilters.brightness}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
+                              e: React.ChangeEvent<HTMLInputElement>
                             ) =>
                               handleShapeGradientFilterChange(e, "brightness")
                             }
@@ -577,6 +579,15 @@ export const Desktop = ({
                 </div>
               </PopoverContent>
             </Popover>
+            <Link
+              href="https://github.com/ankitmukhia/fractal-glass-wallpaper"
+              target="_blank"
+            >
+              <Button>
+                <SiGithub />
+                Star on GitHub
+              </Button>
+            </Link>
 
             <div className="flex gap-2">
               <Button
@@ -644,7 +655,7 @@ export const Desktop = ({
                         resolutionsSizes.find(
                           (size) =>
                             size.width === store.resolution.width &&
-                            size.height === store.resolution.height,
+                            size.height === store.resolution.height
                         )?.name
                       }
                       <span className="pl-2 text-muted-foreground/60">
@@ -670,7 +681,7 @@ export const Desktop = ({
                           "bg-accent focus:bg-acc":
                             store.resolution.width === size.width &&
                             store.resolution.height === size.height,
-                        },
+                        }
                       )}
                       onClick={() =>
                         store.setResolution("direct", {
@@ -725,15 +736,15 @@ export const Desktop = ({
                     // make it dynamic when you have switch between palette feat
                     const paletteName = store.currentPalette;
                     const palette = store.backgroundGradient.find(
-                      (p) => p.name === paletteName,
+                      (p) => p.name === paletteName
                     );
                     if (!palette) return;
                     const getPalette = store.newBackgroundGradient.find(
-                      (p) => p.name === paletteName,
+                      (p) => p.name === paletteName
                     );
                     if (!getPalette) return;
                     const existingColor = getPalette.colors.map(
-                      (palette) => palette,
+                      (palette) => palette
                     );
 
                     const index = getPalette.colors.length;
@@ -751,7 +762,7 @@ export const Desktop = ({
                   disabled={
                     store.withImage ||
                     store.newBackgroundGradient.find(
-                      (p) => p.name === store.currentPalette,
+                      (p) => p.name === store.currentPalette
                     )!.colors.length >= 10
                   }
                 >
@@ -823,7 +834,7 @@ export const Desktop = ({
                   <TabsContent value="gradient">
                     {store.newBackgroundGradient
                       .filter(
-                        (palette) => palette.name === store.currentPalette,
+                        (palette) => palette.name === store.currentPalette
                       )
                       .map((palette, paletteIdx) => {
                         return (
@@ -858,12 +869,12 @@ export const Desktop = ({
                                       onClick={() => {
                                         const findPalette =
                                           store.newBackgroundGradient.find(
-                                            (p) => p.name === palette.name,
+                                            (p) => p.name === palette.name
                                           );
                                         if (!findPalette) return;
                                         const filteredColor =
                                           findPalette.colors.filter(
-                                            (_, cI) => cI !== index,
+                                            (_, cI) => cI !== index
                                           );
 
                                         const removeColor = {
@@ -872,12 +883,12 @@ export const Desktop = ({
                                         };
 
                                         store.setNewBackgroundGradient(
-                                          removeColor,
+                                          removeColor
                                         );
                                       }}
                                       disabled={
                                         store.newBackgroundGradient.find(
-                                          (p) => p.name === palette.name,
+                                          (p) => p.name === palette.name
                                         )!.colors.length <= 2 || store.withImage
                                       }
                                     >
@@ -892,7 +903,7 @@ export const Desktop = ({
                                         store.updateGradientColor(
                                           palette.name,
                                           index,
-                                          newHex.slice(1),
+                                          newHex.slice(1)
                                         )
                                       }
                                     />
@@ -993,8 +1004,8 @@ export const Desktop = ({
                             onClick={() => {
                               store.setNewShape(
                                 store.newShape.filter(
-                                  (_, index) => index !== idx,
-                                ),
+                                  (_, index) => index !== idx
+                                )
                               );
                             }}
                             disabled={store.withImage}
